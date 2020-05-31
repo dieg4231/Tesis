@@ -14,7 +14,13 @@ Kalaman filter as "Probabilistic robotics page: 204"
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_broadcaster.h>
 #include "std_msgs/Float32MultiArray.h"
+#include "geometry_msgs/PoseWithCovariance.h"
 using namespace Eigen;
+
+
+
+geometry_msgs::PoseWithCovariance  prediccion;
+geometry_msgs::PoseWithCovariance  actualizacion;
 
 visualization_msgs::Marker arrow; 
 parameters params;
@@ -117,6 +123,13 @@ bool kalmanCallback(simulator::simulator_base::Request  &req ,simulator::simulat
 		position_real.push_back(Vector2d(x_(0),x_(1)));
 		position_kalman.push_back(Vector2d(x_(0),x_(1)));
 		theta_track = x_(2);
+
+		for(int i = 0 ; i < 36; i++)
+		{
+			prediccion.covariance[i] = 0;
+			actualizacion.covariance[i] = 0;
+		}
+
 	}
 
 	if(swi == 0) // Prediction step
@@ -137,6 +150,25 @@ bool kalmanCallback(simulator::simulator_base::Request  &req ,simulator::simulat
 		theta_track += req.theta;
 		position_ideal.push_back(Vector2d( position_ideal.back()(0) + req.distance * cos(theta_track) ,position_ideal.back()(1) + req.distance * sin(theta_track) ) );
 		
+
+		prediccion.pose.position.x = x_(0);
+		prediccion.pose.position.y = x_(1);
+		prediccion.pose.position.z = 0;
+
+		prediccion.pose.orientation.x = 0;
+		prediccion.pose.orientation.y = 0;
+		prediccion.pose.orientation.z = x_(2);
+
+		prediccion.covariance[0] = p(0,0);
+		prediccion.covariance[1] = p(0,1);
+		prediccion.covariance[5] = p(0,2);
+		prediccion.covariance[6] = p(1,0);
+		prediccion.covariance[7] = p(1,1);
+		prediccion.covariance[11] = p(1,2);
+		prediccion.covariance[30] = p(2,0);
+		prediccion.covariance[31] = p(2,1);
+		prediccion.covariance[35] = p(2,2);
+
 		return true;
 	}	
 	else // Actualizacion
@@ -209,10 +241,31 @@ bool kalmanCallback(simulator::simulator_base::Request  &req ,simulator::simulat
 		// Arrow for visualization in rviz
 		position_real.push_back(Vector2d(params.robot_x,params.robot_y));
 		position_kalman.push_back(Vector2d(x_(0),x_(1)));
+		
 		arrow.pose.position.x = x_(0);
 		arrow.pose.position.y = x_(1);
 		arrow.pose.position.z = 0;
 		arrow.pose.orientation = tf::createQuaternionMsgFromYaw(x_(2));
+
+
+		actualizacion.pose.position.x = x_(0);
+		actualizacion.pose.position.y = x_(1);
+		actualizacion.pose.position.z = 0;
+
+		actualizacion.pose.orientation.x = 0;
+		actualizacion.pose.orientation.y = 0;
+		actualizacion.pose.orientation.z = x_(2);
+
+		actualizacion.covariance[0] = p(0,0);
+		actualizacion.covariance[1] = p(0,1);
+		actualizacion.covariance[5] = p(0,2);
+		actualizacion.covariance[6] = p(1,0);
+		actualizacion.covariance[7] = p(1,1);
+		actualizacion.covariance[11] = p(1,2);
+		actualizacion.covariance[30] = p(2,0);
+		actualizacion.covariance[31] = p(2,1);
+		actualizacion.covariance[35] = p(2,2);
+
 
 		if(debug)std::cout << "Prediccion Final: \n" << x_ << "\n ------\n";
 
@@ -261,6 +314,10 @@ int main(int argc, char *argv[])
 	ros::Publisher pubposition = n.advertise<visualization_msgs::Marker>("/position_from_kalman", 1);		
 	ros::Subscriber centroids_sub = n.subscribe("simulator_centroids_pub", 0, centroidsCallback);
 
+	ros::Publisher prediction_pub = n.advertise<geometry_msgs::PoseWithCovariance>("/kalman_actualization", 1);
+	ros::Publisher actualization_pub = n.advertise<geometry_msgs::PoseWithCovariance>("/kalman_prediction", 1);
+
+
 	arrow.header.frame_id = "/map";
     arrow.header.stamp = ros::Time::now();
 	arrow.ns = "position_from_kalman";
@@ -283,6 +340,8 @@ int main(int argc, char *argv[])
 	while (ros::ok())
 	{
 		pubposition.publish(arrow);
+		prediction_pub.publish(actualizacion);
+		actualization_pub.publish(prediccion);
 		ros::spinOnce();
 		loop_rate.sleep();
 	}

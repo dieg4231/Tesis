@@ -26,7 +26,8 @@ message(CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS})
 include(${CGAL_USE_FILE})
 message(CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS})
 
-#find_package(Eigen3 REQUIRED)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+
 #include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
 
 ## System dependencies are found with CMake's conventions
@@ -261,9 +262,13 @@ target_link_libraries(calcular_q_r ${catkin_LIBRARIES})
 add_dependencies(calcular_q_r simulator_generate_messages_cpp)
 
 add_executable(kalman src/kalman/kalman.cpp)
-target_link_libraries(kalman ${catkin_LIBRARIES})
+target_link_libraries(kalman ${catkin_LIBRARIES} Eigen3::Eigen )
 add_dependencies(kalman simulator_generate_messages_cpp)
 
 add_executable(kalman_trian src/kalman/kalman_trian.cpp)
-target_link_libraries(kalman_trian ${catkin_LIBRARIES})
+target_link_libraries(kalman_trian ${catkin_LIBRARIES} Eigen3::Eigen)
 add_dependencies(kalman_trian simulator_generate_messages_cpp)
+
+add_executable(kalman_to_blobs src/kalman/kalman_to_blobs.cpp)
+target_link_libraries(kalman_to_blobs ${catkin_LIBRARIES} Eigen3::Eigen)
+add_dependencies(kalman_to_blobs simulator_generate_messages_cpp)

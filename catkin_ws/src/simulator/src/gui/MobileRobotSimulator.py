@@ -308,7 +308,7 @@ class MobileRobotSimulator(threading.Thread):
 		map_file.close()
 		image.save(self.rospack.get_path('simulator')+'/src/gui/nodes.png')
 		self.gif1 = PhotoImage( file = self.rospack.get_path('simulator')+'/src/gui/nodes.png')
-		self.nodes_image = self.w.create_image(self.canvasX / 2, self.canvasY / 2, image = self.gif1)
+		self.nodes_image = self.w.create_image(self.canvasX/2 , self.canvasY/2 , image = self.gif1)
 
 ##################################
 ##################################
@@ -935,12 +935,9 @@ class MobileRobotSimulator(threading.Thread):
 						
 					if True:#self.ccw(p1,self.polygons[self.posible_collision[i]][m],self.polygons[self.posible_collision[i]][m+1]) != self.ccw(p2,self.polygons[ self.posible_collision[i] ][m],self.polygons[ self.posible_collision[i] ][m+1]) and self.ccw(p1,p2,self.polygons[ self.posible_collision[i] ][m]) != self.ccw(p1,p2,self.polygons[ self.posible_collision[i] ][m+1]):
 						aux = self.line_intersection(p1,p2,self.polygons[self.posible_collision[i]][m],self.polygons[ self.posible_collision[i] ][m+1],value);
-						if self.sensors_value[k] > aux*self.mapX/ self.canvasX:
-							self.sensors_value[k] = aux*self.mapX	/ self.canvasX		
+						if self.sensors_value[k] > aux*self.mapX / self.canvasX:
+							self.sensors_value[k] = aux*self.mapX / self.canvasX		
 			f = f + step
-
-	def ccw(self,A,B,C):
-		return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
 
 
 	def plot_robot_values(self,color): 
@@ -1049,7 +1046,8 @@ class MobileRobotSimulator(threading.Thread):
 		# It plots the robot on the field
 		# The position and angle depend on the variables:
 		#  self.robotX, self.robotY and self.robot_theta
-		self.calculate_ray_traicing()
+		if self.varShowSensors.get():
+			self.calculate_ray_traicing()
 		x = self.robotX
 		y = self.robotY
 		angle=self.robot_theta
@@ -1703,5 +1701,6 @@ class MobileRobotSimulator(threading.Thread):
 	def run(self):	
 		self.gui_init()
 		self.read_map()
+		self.w.create_oval(100,100,200,200   , outline=self.robotColor, width=1)
 		self.plot_robot2()
 		self.root.mainloop()

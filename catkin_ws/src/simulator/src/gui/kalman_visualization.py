@@ -93,8 +93,15 @@ class MobileRobotSimulator(threading.Thread):
 
 		self.map_path = 0
 
-		self.elipse_x = 0
-		self.elipse_y = 0
+		self.predic_elipse_x = 0
+		self.predic_elipse_y = 0
+		self.predic_elipses = []
+		self.predic_elipse_angle = 0
+
+		self.actual_elipse_x = 0
+		self.actual_elipse_y = 0
+		self.actual_elipses = []
+		self.actual_elipse_angle = 0
 
 		self.start()
 
@@ -114,10 +121,21 @@ class MobileRobotSimulator(threading.Thread):
 ##################################
 	def prediction_plot(self,*args):
 		rospack = rospkg.RosPack()
-		self.gif1 = PhotoImage( file = rospack.get_path('simulator')+'/src/gui/elipse.png')
-		self.w.create_image(  (self.elipse_x*self.canvasX)/self.mapX  , self.canvasY-(self.elipse_y.get()*(self.canvasY/self.mapY))  , image = self.gif1)
-		print("g")
+		image = Image.open(rospack.get_path('simulator')+'/src/gui/predict_elipse.png')
+		self.predic_elipses.append( ImageTk.PhotoImage(image.rotate(self.predic_elipse_angle)) )
+		#self.w.create_image(  (self.predic_elipse_x*self.canvasX)/self.mapX  , self.canvasY-(self.predic_elipse_y.get()*(self.canvasY/self.mapY))  , image = self.predic_elipses[-1])
 
+
+	def actualization_plot(self,*args):
+		rospack = rospkg.RosPack()
+		image = Image.open(rospack.get_path('simulator')+'/src/gui/actual_elipse.png')
+		self.actual_elipses.append( ImageTk.PhotoImage(image.rotate(self.actual_elipse_angle)) )
+		self.w.create_image( (self.actual_elipse_x*self.canvasX)/self.mapX  , self.canvasY-(self.actual_elipse_y.get()*(self.canvasY/self.mapY))  , image = self.actual_elipses[-1])
+
+
+	def clear_canvas(self):
+		self.w.delete("all")
+		self.read_map("nada")
 
 
 	def print_grid(self,line_per_m = 10):
@@ -293,7 +311,7 @@ class MobileRobotSimulator(threading.Thread):
 		self.lableSimulator      = Label (self.rightMenu ,text = "Simulator" ,background = self.backgroundColor ,foreground = self.titlesColor ,font = self.headLineFont)
 		self.buttonLastSimulation= Button(self.rightMenu ,width = 20, text = "Run last simulation" ,state="disabled", foreground = self.buttonFontColor ,background = self.buttonColor , font = self.buttonFont )
 		self.buttonRunSimulation = Button(self.rightMenu ,width = 20, text = "Run simulation", foreground = self.buttonFontColor ,background = self.buttonColor,font = self.buttonFont )
-		self.buttonStop          = Button(self.rightMenu ,width = 20, text = "Stop", foreground = self.buttonFontColor ,background = self.buttonColor, font = self.buttonFont )
+		self.buttonStop          = Button(self.rightMenu ,width = 20, text = "Stop", foreground = self.buttonFontColor ,background = self.buttonColor, font = self.buttonFont,   command = self.clear_canvas)
 
 
 		#### Right menu widgets grid			
@@ -333,18 +351,21 @@ class MobileRobotSimulator(threading.Thread):
 		self.map_path = StringVar(value=" ")
 		self.map_path.trace("w", self.read_map)
 
-		self.elipse_y = DoubleVar(value=0)
-		self.elipse_y.trace("w", self.prediction_plot)
+		self.predic_elipse_y = DoubleVar(value=0)
+		self.predic_elipse_y.trace("w", self.prediction_plot)
+
+		self.actual_elipse_y = DoubleVar(value=0)
+		self.actual_elipse_y.trace("w", self.actualization_plot)
 
 	def run(self):	
 		self.gui_init()
 		self.read_map()
-		self.w.create_oval(100,100,200,200   , outline=self.robotColor, width=1)
 		self.root.mainloop()
 
 
 
 map_old = " "
+
 prediction_x_old = 70969078;
 actualization_x_old = 70969078;
 simul = MobileRobotSimulator()
@@ -353,22 +374,46 @@ simul = MobileRobotSimulator()
 
 def predictionCallback(data):
 	global prediction_x_old
-
 	if prediction_x_old != data.data[0]:
 		rospack = rospkg.RosPack()
 		print(data.data)
 		prediction_x_old = data.data[0]
-
-		image = Image.new('RGBA', ( int(data.data[3] * 100000000) , int( data.data[4] * 100000000 ) ) )
 		
+		canvasX = simul.canvasX
+		canvasY = simul.canvasY
+		map_x = simul.mapX
+		map_y = simul.mapY
+		#image = Image.new('RGBA', ( int(data.data[3] * 100000000) , int( data.data[4] * 100000000 ) ) )
+		image = Image.new('RGBA', (canvasX , canvasY) ) 
 		draw = ImageDraw.Draw(image)
+		draw.ellipse( (  (canvasX/2)-1 , (canvasY/2)-1 , (canvasX/2)+1 , (canvasY/2)+1 ), fill= '#994FDB')
+		draw.ellipse( (  (canvasX/2)-(int( data.data[3] * canvasX/map_x )/2) , (canvasY/2)-(int( data.data[4] * canvasY/map_y )/2) , (canvasX/2)+(int(data.data[3] * canvasX/map_x)/2) , (canvasY/2)+(int( data.data[4] * canvasY/map_y )/2) ), outline = '#9C4FDB')
+		image.save(rospack.get_path('simulator')+'/src/gui/predict_elipse.png')
+		simul.predic_elipse_angle = data.data[2]*(180/math.pi) 
+		simul.predic_elipse_x = data.data[0]
+		simul.predic_elipse_y.set( data.data[1] )
+
+def actualizationCallback(data):
+	global actualization_x_old
+	if actualization_x_old != data.data[0]:
+		rospack = rospkg.RosPack()
+		print(data.data)
+		actualization_x_old = data.data[0]
+		canvasX = simul.canvasX
+		canvasY = simul.canvasY
+		map_x = simul.mapX
+		map_y = simul.mapY
+		#image = Image.new('RGBA', ( int(data.data[3] * 100000000) , int( data.data[4] * 100000000 ) ) )
+		image = Image.new('RGBA', (canvasX , canvasY) ) 
+		draw = ImageDraw.Draw(image)
+		draw.ellipse( (  (canvasX/2)-1 , (canvasY/2)-1 , (canvasX/2)+1 , (canvasY/2)+1 ), fill= '#33DB17')
+		draw.ellipse( (  (canvasX/2)-(int( data.data[3] * canvasX/map_x )/2) , (canvasY/2)-(int( data.data[4] * canvasY/map_y )/2) , (canvasX/2)+(int(data.data[3] * canvasX/map_x)/2) , (canvasY/2)+(int( data.data[4] * canvasY/map_y )/2) ), outline = '#33DB17')
+		image.save(rospack.get_path('simulator')+'/src/gui/actual_elipse.png')
 		
-		draw.ellipse( ( 0 , 0 , int(data.data[3] * 100000000) , int( data.data[4] * 100000000 ) ), outline = '#9C4FDB', fill = '#9C4FDB')
+		simul.actual_elipse_angle = data.data[2]*(180/math.pi) 
+		simul.actual_elipse_x = data.data[0]
+		simul.actual_elipse_y.set( data.data[1] )
 
-		image.save(rospack.get_path('simulator')+'/src/gui/elipse.png')
-
-		simul.elipse_x = data.data[0]
-		simul.elipse_y.set( data.data[1] )
 
 
 def paramsCallback(data):
@@ -378,13 +423,12 @@ def paramsCallback(data):
 		simul.map_path.set(rospack.get_path('simulator')+'/src/data/'+data.world_name+'/'+data.world_name+'.wrl');
 		map_old = data.world_name;
 		
-	
-
 
 if __name__ == "__main__":
 	rospy.init_node('kalman_vizualization_node')
 	rospy.Subscriber("simulator_parameters_pub", Parameters, paramsCallback)
-	rospy.Subscriber("blob_prediction", Float32MultiArray ,  predictionCallback)
+	rospy.Subscriber("/blob_prediction", Float32MultiArray ,  predictionCallback)
+	rospy.Subscriber("/blob_actualization", Float32MultiArray ,  actualizationCallback)
 	#time.sleep(5)
 	
 

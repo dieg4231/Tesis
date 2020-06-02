@@ -18,7 +18,7 @@ float old_pose_x_prediction = 999992;
 bool debug= true;
 
 
-void actualizationCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
+void predictionCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
 {
 	double alfa;
 
@@ -59,8 +59,8 @@ void actualizationCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& da
 			blob_prediction.data.push_back(data->pose.position.x);
 			blob_prediction.data.push_back(data->pose.position.y);
 			blob_prediction.data.push_back(alfa);
-			blob_prediction.data.push_back(es.eigenvalues()[0]);
-			blob_prediction.data.push_back(es.eigenvalues()[1]);
+			blob_prediction.data.push_back( 2 * sqrt( 5.991* es.eigenvalues()[0]) );
+			blob_prediction.data.push_back( 2 * sqrt( 5.991* es.eigenvalues()[1]) );
 		}
 		else
 		{
@@ -68,8 +68,8 @@ void actualizationCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& da
 			blob_prediction.data.push_back(data->pose.position.x);
 			blob_prediction.data.push_back(data->pose.position.y);
 			blob_prediction.data.push_back(alfa);
-			blob_prediction.data.push_back(es.eigenvalues()[1]);
-			blob_prediction.data.push_back(es.eigenvalues()[0]);
+			blob_prediction.data.push_back(2 * sqrt( 5.991* es.eigenvalues()[1]) );
+			blob_prediction.data.push_back(2 * sqrt( 5.991* es.eigenvalues()[0]) );
 		}
 
 		old_pose_x_prediction = data->pose.position.x;
@@ -77,7 +77,7 @@ void actualizationCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& da
 
 }
 
-void predictionCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
+void actualizationCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
 {
 	double alfa;
 
@@ -122,8 +122,8 @@ void predictionCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
 			blob_actualization.data.push_back(data->pose.position.x);
 			blob_actualization.data.push_back(data->pose.position.y);
 			blob_actualization.data.push_back(alfa);
-			blob_actualization.data.push_back(es.eigenvalues()[0]);
-			blob_actualization.data.push_back(es.eigenvalues()[1]);
+			blob_actualization.data.push_back(2 * sqrt( 5.991* es.eigenvalues()[0]) );
+			blob_actualization.data.push_back(2 * sqrt( 5.991* es.eigenvalues()[1]) );
 		}
 		else
 		{
@@ -131,8 +131,8 @@ void predictionCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
 			blob_actualization.data.push_back(data->pose.position.x);
 			blob_actualization.data.push_back(data->pose.position.y);
 			blob_actualization.data.push_back(alfa);
-			blob_actualization.data.push_back(es.eigenvalues()[1]);
-			blob_actualization.data.push_back(es.eigenvalues()[0]);
+			blob_actualization.data.push_back(2 * sqrt( 5.991* es.eigenvalues()[1]) );
+			blob_actualization.data.push_back(2 * sqrt( 5.991* es.eigenvalues()[0]) );
 		}
 
 		old_pose_x_actualization = data->pose.position.x;

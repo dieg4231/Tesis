@@ -26,8 +26,8 @@
 float x2,  y2, theta2;
 
 const double mean = 0.0;
-double stddev_distance = 0.03;
-double stddev_theta = 0.174533;
+double stddev_distance = 0.01;
+double stddev_theta = 0.074533;
 
 std::default_random_engine generator;
 std::normal_distribution<double> noise_distance(mean, stddev_distance);

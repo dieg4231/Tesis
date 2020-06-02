@@ -17,6 +17,13 @@ Kalaman filter as "Probabilistic robotics page: 204"
 #include "geometry_msgs/PoseWithCovariance.h"
 using namespace Eigen;
 
+const double mean = 0.0;
+double stddev_land = 0.02;
+
+std::default_random_engine generator;
+std::normal_distribution<double> noise_distance(mean, stddev_land);
+
+
 
 
 geometry_msgs::PoseWithCovariance  prediccion;
@@ -65,17 +72,17 @@ void centroidsCallback(const std_msgs::Float32MultiArray::ConstPtr& centroides)
 	{	
 		if( i == 0 )
 		{
-			aux.x = *it;
+			aux.x = *it;// +  noise_distance(generator) ;
 			i++;
 		}
 		else if ( i == 1 )
 		{
-			aux.y = *it;
+			aux.y = *it;// +  noise_distance(generator) ;
 			i++;
 		}
 		else if ( i == 2 )
 		{
-			aux.r = *it; /*****************Add noise ?********************/
+			aux.r = *it ;//+  noise_distance(generator) ; /*****************Add noise ?********************/
 			i ++;
 		}
 		else

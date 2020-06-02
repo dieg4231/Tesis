@@ -1701,6 +1701,5 @@ class MobileRobotSimulator(threading.Thread):
 	def run(self):	
 		self.gui_init()
 		self.read_map()
-		self.w.create_oval(100,100,200,200   , outline=self.robotColor, width=1)
 		self.plot_robot2()
 		self.root.mainloop()

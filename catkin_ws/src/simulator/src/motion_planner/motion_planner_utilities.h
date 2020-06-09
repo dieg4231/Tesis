@@ -267,7 +267,7 @@ int quantize_laser_noise(float *observations, int size, float laser_value  )
     int a,b,cta;
     int iz,de,salida;
     int j;
-    laser_value = .05;
+    laser_value = .09;
 
     iz = de = salida = 0;
     if( size % 2 != 0)

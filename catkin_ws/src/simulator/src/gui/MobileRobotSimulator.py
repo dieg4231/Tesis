@@ -35,8 +35,8 @@ class MobileRobotSimulator(threading.Thread):
 		self.mapX = 0 
 		self.mapY = 0
 		# canvas size in pixels
-		self.canvasX= 600
-		self.canvasY= 600
+		self.canvasX= 800
+		self.canvasY= 800
 		# robot position and angle
 		self.robot_theta=0
 		self.robotX=-100

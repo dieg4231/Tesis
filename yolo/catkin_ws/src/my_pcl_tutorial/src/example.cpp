@@ -132,6 +132,8 @@ std::vector<unsigned int> ids2;
       //std::cout << "sii22" << indx2->indices[j] << std::endl;
       if( !isnan(cloud_roi->points[indx2->indices[j]].x) && !isnan(cloud_roi->points[indx2->indices[j]].y) && !isnan(cloud_roi->points[indx2->indices[j]].z)  )
       {
+                        //de la numbe de puntos (cloud_roi) se obtiene los puntos (cloud_roi->point) que se encuentran en las posiciones indicadas en (indx2->indices) que es la lista de todos los indices y en este caso "j" va recorriendo los indices que pertencen a cada marca.
+                        //separatos es un vector con los indices separadores del arreglo de indises jaja en serio.
         centroid.add (pcl::PointXYZ ( cloud_roi->points[indx2->indices[j]].x, cloud_roi->points[indx2->indices[j]].y, cloud_roi->points[indx2->indices[j]].z) );
         //std::cout << "sii" << cloud_roi->points[indx2->indices[j]].x<< std::endl;
       }

@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <robot name="robotino">
-<xacro:include filename="$(find hector_sensors_description)/urdf/hokuyo_utm30lx.urdf.xacro"/>
+<include filename="$(find hector_sensors_description)/urdf/hokuyo_utm30lx.urdf"/>
 <!-- ***************************** Main Body ***************************** -->
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 0.035" rpy="0 0 0"/>
+      <origin xyz="0 0 0.035" rpy="0 0 1.5707"/>
       <geometry>
         <mesh filename="package://robotino_description/model/Robotino3_SplitMain.dae" scale="0.01 0.01 0.01"/>
       </geometry>
@@ -100,10 +100,54 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <axis xyz="0 0 0" rpy="0 0 0"/>	
   </joint>
-
-  <hokuyo_utm30lx_model name="hokuyo_laser" parent="base_link">
-    <origin xyz="0 0 +0.30" rpy="0 0 0" />
-  </hokuyo_utm30lx_model>
 <!-- ***************************** END ***************************** -->  
+
+<!--Hokuyo :P -->
+  <link name="hokuyo_laser_link">
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+  <joint name="base_to_hokuyo" type="fixed">
+    <parent link="base_link"/>
+    <child link="hokuyo_laser_link"/>
+    <origin rpy="0 0 0" xyz="0.125 0.0 0.22"/>
+  </joint>
+
+<!-- Kinect o stereo camera-->
+
+  <link name="kinect_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.14 0.0175"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+  </link>
+
+ <joint name="base_to_kinect" type="fixed">
+    <parent link="base_link"/>
+    <child link="kinect_link"/>
+    <origin rpy="0 0 0" xyz="0.17 0.0 0.78"/>
+  </joint>
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
 </robot>
 

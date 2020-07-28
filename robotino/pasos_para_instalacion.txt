@@ -1,0 +1,21 @@
+
+
+1.- Install robotino-api2  from http://packages.openrobotino.org/bionic/pool/main/r/robotino-api2/
+	the libraries required for compile robotino-pkg are placed at /opt/robotino/include/ 
+	Dont forget to update libraries sources 
+		sudo ldconfig
+
+2.- Download package from https://doc.openrobotino.org/ROS/    
+	robotino-complete-20190308.zip
+	add to your workspace
+	compile:
+		catkin_make
+		if it warring:   fatal error: robotino_msgs/XXXXXX.h: No such file or directory
+		delete:  (from catkin_ws)   rm  -R build /devel
+		remove for a moment the  directory: catkin_ws/src/robotino_node
+		compile: catkin_make
+		return robotino_node to catkin/src
+		compile again: catkin_make
+		It works :D
+
+

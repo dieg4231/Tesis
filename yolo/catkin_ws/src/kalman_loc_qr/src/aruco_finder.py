@@ -9,6 +9,9 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import UInt32MultiArray, Header
 from cv_bridge import CvBridge
 import numpy as np
+from skimage.draw import polygon
+
+
 
 class cvBridgeDemo():
     def __init__(self):
@@ -86,6 +89,11 @@ class cvBridgeDemo():
                 #print(tvec)
                 imageCopy = cv2.aruco.drawDetectedMarkers(imageCopy, markerCorners, markerIds)
                 #imageCopy = cv2.aruco.drawAxis(imageCopy, cameraMatrix, distCoeffs, rvec, tvec, 0.01)  # Draw Axis
+                
+                
+
+
+                
                 min_x = markerCorners[i][0][0][0] 
                 min_y = markerCorners[i][0][0][1] 
 
@@ -101,6 +109,7 @@ class cvBridgeDemo():
                 min_y += int(reducttion_y)
                 max_y -= int(reducttion_y)
 
+                '''
                 array_aux = np.arange( (max_y-min_y+1 )*(max_x-min_x+1 ) )
 
                 j = 0
@@ -108,10 +117,25 @@ class cvBridgeDemo():
                     for x in range(int(min_x),int(max_x)):
                         array_aux[j] = image_width*y+(x)
                         j = j+1
+                '''            
+                ################################
+                c = np.array([markerCorners[i][0][0][0], markerCorners[i][0][1][0], markerCorners[i][0][2][0], markerCorners[i][0][3][0]  ])
+                r = np.array([markerCorners[i][0][0][1], markerCorners[i][0][1][1], markerCorners[i][0][2][1], markerCorners[i][0][3][1]  ])
+
+                rr, cc = polygon(r, c)
+
+                array_aux = np.arange(rr.size)
+
+                for k, y in enumerate(rr):
+                    array_aux[k] = image_width*y+(cc[k])
+                ################################
+                
                 if i==0:
-                    separators.append(j)
+                    separators.append(rr.size)
+                    #separators.append(j)
                 else:
-                    separators.append(separators[-1]+j)
+                    separators.append(separators[-1]+rr.size)
+                    #separators.append(separators[-1]+j)
 
                 idex_of_codes=np.append (idex_of_codes, array_aux)
                 ids.append(markerIds[i][0])

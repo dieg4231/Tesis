@@ -83,7 +83,7 @@ std::vector<unsigned int> ids2;
 
   std_msgs::Header landmarksHeader;
   landmarksHeader.stamp = ros::Time::now();
-  landmarksHeader.frame_id = "base_link";
+  landmarksHeader.frame_id = "/camera_depth_optical_frame";//"base_link";
   kalman_loc_qr::Landmarks landmarks;
   
   landmarks.header = landmarksHeader;
@@ -127,6 +127,7 @@ std::vector<unsigned int> ids2;
     //distance = sqrt( pow(c1.x,2)+pow(c1.y,2);
     //geometry_msgs::PoseArray
   }
+
   pub_landmarks.publish(landmarks);
 
 }

@@ -33,7 +33,8 @@ geometry_msgs::Point from_device2map(geometry_msgs::Point device)
   tf::StampedTransform transform;
   
   try{
-    listener.lookupTransform("/map", "/kinect",
+    listener.waitForTransform("/map", "/base_link", ros::Time(0), ros::Duration(3.0));
+    listener.lookupTransform("/map", "/base_link",
                              ros::Time(0), transform);
   }
   catch (tf::TransformException &ex) {
@@ -41,6 +42,8 @@ geometry_msgs::Point from_device2map(geometry_msgs::Point device)
   }
   
   geometry_msgs::Point map_point;
+
+  //ROS_INFO("X: %f Y: %f Z: %f ",transform.getOrigin().x(),transform.getOrigin().y(),transform.getOrigin().z());
 
   map_point.x = device.x + transform.getOrigin().x();
   map_point.y = device.y + transform.getOrigin().y();
@@ -56,22 +59,25 @@ add_points (const kalman_loc_qr::LandmarksConstPtr& msg)
   
   for(int i = 0; i < msg->ids.size(); i++) // Todos los ids recibidos
   {
-    std::vector<int>::iterator it =  std::find(ids_acumulado.begin(), ids_acumulado.end(), ids_acumulado[i]);
+    std::vector<int>::iterator it =  std::find(ids_acumulado.begin(), ids_acumulado.end(), msg->ids[i]);
     if( it != ids_acumulado.end() ) //Si se encuentra el id i en la lista 
     {   // se agregan sus puntos al acumulado
         
         int index = it - ids_acumulado.begin();
        
-        points_acumulado[index].push_back( msg->pointLandmarks[i] );
+        points_acumulado[index].push_back( from_device2map( msg->pointLandmarks[i]) );
     }
     else  // se grega el nuevo id
     {
       ids_acumulado.push_back(msg->ids[i]);
       std::vector<geometry_msgs::Point> v_aux;
-      v_aux.push_back(msg->pointLandmarks[i]);
+      v_aux.push_back(from_device2map(msg->pointLandmarks[i]));
       points_acumulado.push_back( v_aux );
+      std::cout << "nuevo: " << msg->ids[i] << " \n";  
     }
+    
   }
+    std::cout << "----------- \n";
 }
 
 bool 

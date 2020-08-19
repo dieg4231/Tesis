@@ -1,3 +1,3 @@
 Header header
-geometry_msgs/Point[] pointLandmarks
+geometry_msgs/PointStamped[] pointLandmarks
 int32[] ids

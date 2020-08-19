@@ -2,6 +2,7 @@
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
 #include <std_msgs/UInt32MultiArray.h>
 #include <std_msgs/UInt32.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -24,31 +25,35 @@
 
 
 
-std::vector<std::vector<geometry_msgs::Point>> points_acumulado;
+std::vector<std::vector<geometry_msgs::PointStamped>> points_acumulado;
 std::vector<int> ids_acumulado;
 
-geometry_msgs::Point from_device2map(geometry_msgs::Point device)
+geometry_msgs::PointStamped from_device2map(geometry_msgs::PointStamped device)
 {
   tf::TransformListener listener;
   tf::StampedTransform transform;
+  geometry_msgs::PointStamped map_point;
+  tf::Vector3 v(device.point.x, device.point.y, device.point.z);
   
   try{
-    listener.waitForTransform("/map", "/base_link", ros::Time(0), ros::Duration(3.0));
-    listener.lookupTransform("/map", "/base_link",
-                             ros::Time(0), transform);
+    listener.waitForTransform("/map", "/camera_depth_optical_frame", ros::Time(0), ros::Duration(3.0));
+    //listener.transformPoint("/map", ros::Time(0), device,"/camera_depth_optical_frame",map_point );
+    listener.lookupTransform("/map", "/base_link",ros::Time(0), transform);
+    
+    v = transform * v;
   }
   catch (tf::TransformException &ex) {
     ROS_ERROR("%s",ex.what());
   }
   
-  geometry_msgs::Point map_point;
-
-  //ROS_INFO("X: %f Y: %f Z: %f ",transform.getOrigin().x(),transform.getOrigin().y(),transform.getOrigin().z());
-
-  map_point.x = device.x + transform.getOrigin().x();
-  map_point.y = device.y + transform.getOrigin().y();
-  map_point.z = device.z + transform.getOrigin().z();
   
+
+   ROS_INFO("X: %f Y: %f Z: %f ",map_point.point.x,map_point.point.y,map_point.point.z);
+
+  map_point.point.x = v.x();//device.x + transform.getOrigin().x();
+  map_point.point.y = v.y();//device.y + transform.getOrigin().y();
+  map_point.point.z = v.z();//device.z + transform.getOrigin().z();
+
   return map_point;
 
 }
@@ -70,7 +75,7 @@ add_points (const kalman_loc_qr::LandmarksConstPtr& msg)
     else  // se grega el nuevo id
     {
       ids_acumulado.push_back(msg->ids[i]);
-      std::vector<geometry_msgs::Point> v_aux;
+      std::vector<geometry_msgs::PointStamped> v_aux;
       v_aux.push_back(from_device2map(msg->pointLandmarks[i]));
       points_acumulado.push_back( v_aux );
       std::cout << "nuevo: " << msg->ids[i] << " \n";  
@@ -97,9 +102,9 @@ save_map(kalman_loc_qr::SaveQRMap::Request &req,
     j = x = y = z = 0;
     for(j = 0; j < points_acumulado[i].size(); j++)
     {
-      x += points_acumulado[i][j].x;
-      y += points_acumulado[i][j].y;
-      z += points_acumulado[i][j].z;
+      x += points_acumulado[i][j].point.x;
+      y += points_acumulado[i][j].point.y;
+      z += points_acumulado[i][j].point.z;
     }
 
     x /= j;

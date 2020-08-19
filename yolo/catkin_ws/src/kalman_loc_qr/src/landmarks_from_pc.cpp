@@ -2,6 +2,7 @@
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
 #include <std_msgs/UInt32MultiArray.h>
 #include <std_msgs/UInt32.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -113,12 +114,18 @@ std::vector<unsigned int> ids2;
 
     std::cout << "ARUCO: " << ids2[i] << " X: " << c1.x << ", Y: " << c1.y << ", Z: " << c1.z << " DIST: " <<  sqrt( pow(c1.x,2)+pow(c1.y,2)+pow(c1.z,2) ) << " Ang: " << atan2(c1.z,c1.x)-(M_PI/2) << std::endl;
     
-    
-    geometry_msgs::Point point_msgs;
 
-    point_msgs.x =c1.x;
-    point_msgs.y =c1.y;
-    point_msgs.z =c1.z;
+    
+    geometry_msgs::PointStamped point_msgs;
+
+    landmarksHeader.stamp = ros::Time::now();
+    landmarksHeader.frame_id = "/camera_depth_optical_frame";//"base_link";
+  
+    point_msgs.header = landmarksHeader;
+
+    point_msgs.point.x =c1.x;
+    point_msgs.point.y =c1.y;
+    point_msgs.point.z =c1.z;
 
     landmarks.ids.push_back(ids2[i]);
     landmarks.pointLandmarks.push_back(point_msgs);

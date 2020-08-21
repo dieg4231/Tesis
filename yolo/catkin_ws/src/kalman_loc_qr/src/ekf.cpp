@@ -36,7 +36,7 @@ geometry_msgs::PointStamped from_device2map(geometry_msgs::PointStamped device)
   tf::Vector3 v(device.point.x, device.point.y, device.point.z);
   
   try{
-    listener.waitForTransform("/map", "/camera_depth_optical_frame", ros::Time(0), ros::Duration(3.0));
+    listener.waitForTransform("/map", "/base_link", ros::Time(0), ros::Duration(3.0));
     //listener.transformPoint("/map", ros::Time(0), device,"/camera_depth_optical_frame",map_point );
     listener.lookupTransform("/map", "/base_link",ros::Time(0), transform);
     
@@ -48,11 +48,13 @@ geometry_msgs::PointStamped from_device2map(geometry_msgs::PointStamped device)
   
   
 
-   ROS_INFO("X: %f Y: %f Z: %f ",map_point.point.x,map_point.point.y,map_point.point.z);
+   
 
   map_point.point.x = v.x();//device.x + transform.getOrigin().x();
   map_point.point.y = v.y();//device.y + transform.getOrigin().y();
   map_point.point.z = v.z();//device.z + transform.getOrigin().z();
+
+  ROS_INFO("X: %f Y: %f Z: %f ",map_point.point.x,map_point.point.y,map_point.point.z);
 
   return map_point;
 

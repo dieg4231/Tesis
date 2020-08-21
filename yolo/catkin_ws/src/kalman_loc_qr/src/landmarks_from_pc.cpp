@@ -34,7 +34,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
 { 
   pcl::PointIndices::Ptr indx2(new pcl::PointIndices ());
   std::vector<unsigned int> separators2;
-std::vector<unsigned int> ids2;
+  std::vector<unsigned int> ids2;
 
   *indx2 = *indx;
   separators2 = separators;
@@ -47,11 +47,9 @@ std::vector<unsigned int> ids2;
   
   pcl::fromROSMsg(*cloud_msg,*cloud_pcl);
 
-  
-
   pcl::ExtractIndices<pcl::PointXYZ> filter;
-  filter.setInputCloud (cloud_pcl);//_filtered);
-  filter.setIndices (indx2);//ices);
+  filter.setInputCloud (cloud_pcl);
+  filter.setIndices (indx2);
 
   // Extract the points in cloud_in referenced by indices_in as a separate point cloud:
   filter.setKeepOrganized (true);
@@ -63,31 +61,33 @@ std::vector<unsigned int> ids2;
   pcl::toROSMsg(*cloud_roi,output);
   
   std_msgs::Header header;
- // if(device.compare("kinect") == 0 )
-  //{
-    header.frame_id = "camera_depth_optical_frame"; //Kinect
-   // std::cout << "atooo \n";
-  //}else if(device.compare("zed_stereo") == 0)
-  //{
-   // header.frame_id = "base_link"; // ZED
-   // std::cout << "ati \n";
- // }
- // else
-  //{
-    //std::cout << "You mustn't be here" << device << std::endl;
-  //}
-  
-  output.header = header;
+ 
+  if(device.compare("kinect") == 0 )
+  {
 
-  // Publish the data
+    header.frame_id = "camera_depth_optical_frame"; //Kinect
+   
+  }
+  else if( device.compare("zed_stereo") == 0)
+  {
+
+    header.frame_id = "zed_left_camera_frame"; // ZED
+
+  }
+  else
+  {
+    std::cout << "You mustn't be here" << device << std::endl;
+  }
+
+  output.header = header;
+  header.stamp = ros::Time::now();
+
+  //Publish the data
   pub_cloud.publish (output);
 
-  std_msgs::Header landmarksHeader;
-  landmarksHeader.stamp = ros::Time::now();
-  landmarksHeader.frame_id = "/camera_depth_optical_frame";//"base_link";
+
   kalman_loc_qr::Landmarks landmarks;
-  
-  landmarks.header = landmarksHeader;
+  landmarks.header = header;
 
   for(int i = 0; i < ids2.size() ; i++)
   {
@@ -109,20 +109,29 @@ std::vector<unsigned int> ids2;
 
     //Posicion del kinect  <origin rpy="0 0 0" xyz="0.17 0.0 0.78"/>
     // (Cambiar por la transformacion automaticamente)
+    
+    
+
+    double aux;
+    if( device.compare("zed_stereo") == 0)
+    {
+      aux = c1.x;
+      c1.x = -c1.y ;
+      c1.y = -c1.z;
+      c1.z = aux;
+    }
+
     c1.x += 0.17;
     c1.z += 0.78;
 
+
     std::cout << "ARUCO: " << ids2[i] << " X: " << c1.x << ", Y: " << c1.y << ", Z: " << c1.z << " DIST: " <<  sqrt( pow(c1.x,2)+pow(c1.y,2)+pow(c1.z,2) ) << " Ang: " << atan2(c1.z,c1.x)-(M_PI/2) << std::endl;
     
-
     
+
     geometry_msgs::PointStamped point_msgs;
-
-    landmarksHeader.stamp = ros::Time::now();
-    landmarksHeader.frame_id = "/camera_depth_optical_frame";//"base_link";
-  
-    point_msgs.header = landmarksHeader;
-
+    header.stamp = ros::Time::now();
+    point_msgs.header = header;
     point_msgs.point.x =c1.x;
     point_msgs.point.y =c1.y;
     point_msgs.point.z =c1.z;
@@ -164,37 +173,44 @@ indicesCallback (const kalman_loc_qr::ArucoMasksPtr& indices)
 int
 main (int argc, char** argv)
 {
-  // Initialize ROS
-  ros::init (argc, argv, "my_pcl_tutorial");
+
+  ros::init (argc, argv, "landmarks_from_pc_node");
   ros::NodeHandle nh;
+  ros::Subscriber sub_cloud;
 
   if(ros::param::has("~device"))
   {
-    ros::param::get("~device", device);
-    std::cout << "Device: " << device << std::endl;
-  }
-  else
-  {
-    std::cout << "Sorry device not found. Try: kinect/zed_stereo" << device << std::endl;
-    return 0;
-  }
-
-
-  // Create a ROS subscriber for the input point cloud
-  //if(device.compare("kinect") == 0)
     
-    ros::Subscriber sub_cloud = nh.subscribe ("/camera/depth_registered/points", 1, cloud_cb);
-    //ros::Subscriber sub_cloud = nh.subscribe ("/zed/zed_node/point_cloud/cloud_registered", 1, cloud_cb);
-  /*else if(device.compare("zed_stereo") == 0)
-  {
-    std::cout << "aquuuoio \n";
-    ros::Subscriber sub_cloud = nh.subscribe ("/zed/zed_node/point_cloud/cloud_registered", 1, cloud_cb);
+    ros::param::get("~device", device);
+    
+    // Create a ROS subscriber for the input point cloud
+    
+    if( device.compare("kinect") == 0)
+    {
+
+      sub_cloud = nh.subscribe ("/camera/depth_registered/points", 1, cloud_cb);
+    
+    }
+    else if(device.compare("zed_stereo") == 0)
+    {
+     
+      sub_cloud = nh.subscribe ("/zed/zed_node/point_cloud/cloud_registered", 1, cloud_cb);
+    
+    }
+    else
+    {
+    
+      std::cout << "Sorry device " << device << "not found. Try: _device:=kinect/zed_stereo" << std::endl;
+      return 0;
+    
+    }
   }
   else
   {
-    std::cout << "Sorry U_U" << device << std::endl;
+    std::cout << "Sorry U_U give a device name. Try: _device:=kinect/zed_stereo "  << device << std::endl;
     return 0;
-  }*/
+  }
+
   
   ros::Subscriber sub_indices = nh.subscribe ("/indices", 1, indicesCallback);
 
@@ -202,6 +218,6 @@ main (int argc, char** argv)
   pub_cloud = nh.advertise<sensor_msgs::PointCloud2> ("landmarksPointCloud", 1);
   pub_landmarks = nh.advertise<kalman_loc_qr::Landmarks> ("landmarksPoint", 1);
 
-  // Spin
+  // Spin xD
   ros::spin ();
 }

@@ -26,11 +26,13 @@
         <param name="publish_frequency" type="double" value="20.0" />
         </node>
 
+        <node pkg="tf" type="static_transform_publisher" name="kinect_camera_to_kinect_link" args="0 0 0 0 0 0 kinect_link camera_link  50"/> 
+
     <!--node pkg="tf" type="static_transform_publisher" name="laser_camera_broadcaster" args="0.0 0 0.0 0 0 0 laser_link camera_depth_frame 50" /-->
 
-        <node pkg="tf" type="static_transform_publisher" name="laser_link_broadcaster" args="0 0 0.23 0 0 0 base_link laser_link 50" />i
+        <!--node pkg="tf" type="static_transform_publisher" name="laser_link_broadcaster" args="0 0 0.23 0 0 0 base_link laser_link 50" /-->
 
-        <node pkg="tf" type="static_transform_publisher" name="laser_link_broadcaster2" args="0 0 0.23 0 0 0 laser_link laser 50" />
+        <!--node pkg="tf" type="static_transform_publisher" name="laser_link_broadcaster2" args="0 0 0.23 0 0 0 laser_link laser 50" /-->
 
 
         <param name="robot_description" textfile="$(find robotino_description)/robotino_tesis.urdf" />

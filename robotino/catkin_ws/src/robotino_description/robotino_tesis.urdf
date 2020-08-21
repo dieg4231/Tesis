@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <robot name="robotino">
-<include filename="$(find hector_sensors_description)/urdf/hokuyo_utm30lx.urdf"/>
 <!-- ***************************** Main Body ***************************** -->
   <link name="base_link">
     <visual>
@@ -10,6 +9,7 @@
       </geometry>
     </visual>
     <collision>
+      <origin xyz="0 0 0.035" rpy="0 0 1.5707"/>
       <geometry>
         <mesh filename="package://robotino_description/model/Robotino3_SplitMain.dae" scale="0.01 0.01 0.01"/>
       </geometry>
@@ -120,7 +120,7 @@
 
 <!-- Kinect o stereo camera-->
 
-  <link name="kinect_link">
+  <link name="depth_device_link">
     <visual>
       <geometry>
         <box size="0.03 0.14 0.0175"/>
@@ -131,23 +131,11 @@
 
  <joint name="base_to_kinect" type="fixed">
     <parent link="base_link"/>
-    <child link="kinect_link"/>
+    <child link="depth_device_link"/>
     <origin rpy="0 0 0" xyz="0.17 0.0 0.78"/>
   </joint>
 
 
-
-
-
-
-
-
-
-
-
-
-
-	
 
 </robot>
 

@@ -214,5 +214,8 @@ include_directories(
 add_executable(landmarks_from_pc src/landmarks_from_pc.cpp)
 target_link_libraries(landmarks_from_pc ${catkin_LIBRARIES})
 
+add_executable(aruco_mapping src/aruco_mapping.cpp)
+target_link_libraries(aruco_mapping ${catkin_LIBRARIES})
+
 add_executable(ekf src/ekf.cpp)
 target_link_libraries(ekf ${catkin_LIBRARIES})

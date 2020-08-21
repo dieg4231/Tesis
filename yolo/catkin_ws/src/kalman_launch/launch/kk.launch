@@ -1,0 +1,23 @@
+<!-- kk = kalman-->
+<launch>
+    
+    
+    <include file="$(find freenect_launch)/launch/freenect.launch" />
+
+    <node name="aruco_finder" pkg="kalman_loc_qr" type="aruco_finder.py" output="screen">
+        <param name="device" value="kinect" />
+        
+    </node>
+
+    <node name="landmarks_from_pc" pkg="kalman_loc_qr" type="landmarks_from_pc" output="screen">
+        <param name="device" value="kinect" />
+    </node>
+
+    
+    <!-- Une el kinect a la base -->
+    <node pkg="tf" type="static_transform_publisher" name="kinect_camera_to_kinect_link" args="0 0 0 0 0 0 depth_device_link camera_link  50"/> 
+
+    
+
+
+</launch>

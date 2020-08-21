@@ -1,7 +1,16 @@
 <launch>
-<node name="loc_amcl" pkg="amcl" type="amcl" output="screen" args="scan:=/scan">
+    <arg name="map_file" default="$(find kalman_loc_qr)/maps/casa.yaml"/>
+    
+    
+    <include file="$(find kalman_launch)/launch/kz.launch" />
 
-				<!-- This params are for relocate the justina localization more fast --> 
+    <node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
+    
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    <node name="loc_amcl" pkg="amcl" type="amcl" output="screen" args="scan:=/scan">
+
+				<!-- This params are for relocate the justina localization faster --> 
 				<param name="odom_alpha1" value="0.6"/>
 				<param name="odom_alpha2" value="0.6"/>
 				<param name="odom_alpha3" value="0.6"/>
@@ -52,5 +61,9 @@
 				<param name="initial_cov_xx" value="0.1"/> 
 				<param name="initial_cov_yy" value="0.1"/>
 				<param name="initial_cov_aa" value="0.1"/ -->
-			</node>
+		</node>
+
+
+
 </launch>
+

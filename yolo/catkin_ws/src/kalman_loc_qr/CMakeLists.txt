@@ -219,3 +219,6 @@ target_link_libraries(aruco_mapping ${catkin_LIBRARIES})
 
 add_executable(ekf src/ekf.cpp)
 target_link_libraries(ekf ${catkin_LIBRARIES})
+
+add_executable(map_qr_loader src/map_qr_loader.cpp)
+target_link_libraries(map_qr_loader ${catkin_LIBRARIES})

@@ -23,7 +23,8 @@
 #include <ros/package.h>
 #include <tf/transform_listener.h>
 
-
+double max_dist = 100;
+std::string max_dist_string;
 
 std::vector<std::vector<geometry_msgs::PointStamped>> points_acumulado;
 std::vector<int> ids_acumulado;
@@ -46,10 +47,6 @@ geometry_msgs::PointStamped from_device2map(geometry_msgs::PointStamped device)
     ROS_ERROR("%s",ex.what());
   }
   
-  
-
-   
-
   map_point.point.x = v.x();//device.x + transform.getOrigin().x();
   map_point.point.y = v.y();//device.y + transform.getOrigin().y();
   map_point.point.z = v.z();//device.z + transform.getOrigin().z();
@@ -60,12 +57,21 @@ geometry_msgs::PointStamped from_device2map(geometry_msgs::PointStamped device)
 
 }
 
+double distance2landmak(geometry_msgs::PointStamped landmark)
+{
+  return sqrt( pow(landmark.point.x,2) + pow(landmark.point.y,2) + pow(landmark.point.z,2) );
+}
+
 void 
 add_points (const kalman_loc_qr::LandmarksConstPtr& msg)
 { 
   
   for(int i = 0; i < msg->ids.size(); i++) // Todos los ids recibidos
-  {
+  { 
+    if( distance2landmak( msg->pointLandmarks[i] ) > max_dist )
+        continue;
+
+
     std::vector<int>::iterator it =  std::find(ids_acumulado.begin(), ids_acumulado.end(), msg->ids[i]);
     if( it != ids_acumulado.end() ) //Si se encuentra el id i en la lista 
     {   // se agregan sus puntos al acumulado
@@ -125,9 +131,25 @@ int
 main (int argc, char** argv)
 {
   // Initialize ROS
-  ros::init (argc, argv, "ekf");
+  ros::init (argc, argv, "aruco_mapping_node");
   ros::NodeHandle nh;
 
+  if(ros::param::has("~max_dist"))
+  {
+    
+    ros::param::get("~max_dist", max_dist_string );
+    max_dist = std::stod (max_dist_string);
+    if( max_dist < 0)
+    {
+      return 0;
+    }
+   
+  }
+  else
+  {
+    std::cout << "Sorry U_U give a  max_dist. Try: _max_dist:=5.0 "  << max_dist << std::endl;
+    return 0;
+  }
 
   ros::Subscriber landmarks_sub = nh.subscribe ("/landmarksPoint", 1, add_points);
   ros::ServiceServer save_service = nh.advertiseService("get_qr_map", save_map);    

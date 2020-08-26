@@ -222,3 +222,6 @@ target_link_libraries(ekf ${catkin_LIBRARIES})
 
 add_executable(map_qr_loader src/map_qr_loader.cpp)
 target_link_libraries(map_qr_loader ${catkin_LIBRARIES})
+
+add_executable(landmarks_found src/landmarks_found.cpp)
+target_link_libraries(landmarks_found ${catkin_LIBRARIES})

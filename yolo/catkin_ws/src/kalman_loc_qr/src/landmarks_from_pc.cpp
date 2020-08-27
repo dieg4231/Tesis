@@ -125,7 +125,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
     c1.z += 0.78;
 
 
-    std::cout << "ARUCO: " << ids2[i] << " X: " << c1.x << ", Y: " << c1.y << ", Z: " << c1.z << " DIST: " <<  sqrt( pow(c1.x,2)+pow(c1.y,2)+pow(c1.z,2) ) << " Ang: " << atan2(c1.z,c1.x)-(M_PI/2) << std::endl;
+    //std::cout << "ARUCO: " << ids2[i] << " X: " << c1.x << ", Y: " << c1.y << ", Z: " << c1.z << " DIST: " <<  sqrt( pow(c1.x,2)+pow(c1.y,2)+pow(c1.z,2) ) << " Ang: " << atan2(c1.z,c1.x)-(M_PI/2) << std::endl;
     
     
 

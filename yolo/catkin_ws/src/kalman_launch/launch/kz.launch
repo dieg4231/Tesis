@@ -14,7 +14,7 @@
 
     
     <!-- Une el kinect a la base -->
-    <node pkg="tf" type="static_transform_publisher" name="zed_camera_to_kinect_link" args="0 0 0 0 0 0 depth_device_link base_link_zed  50"/> 
+    <node pkg="tf" type="static_transform_publisher" name="zed_camera_to_kinect_link" args="0 0 0 0 0 0 zed_link base_link_zed  50"/> 
 
     
 

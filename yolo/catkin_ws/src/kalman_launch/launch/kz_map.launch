@@ -4,7 +4,7 @@
     
     <include file="$(find kalman_launch)/launch/kz.launch" />
 
-    <node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
+    <node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" />
     
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
@@ -61,9 +61,6 @@
 				<param name="initial_cov_xx" value="0.1"/> 
 				<param name="initial_cov_yy" value="0.1"/>
 				<param name="initial_cov_aa" value="0.1"/ -->
-		</node>
-
-
-
+	</node>
 </launch>
 

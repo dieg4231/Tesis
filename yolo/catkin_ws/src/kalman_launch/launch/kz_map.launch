@@ -4,7 +4,7 @@
     
     <include file="$(find kalman_launch)/launch/kz.launch" />
 
-    <node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" />
+    <node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
 		<param name="max_dist" value="4.0"/>
 	</node>
     

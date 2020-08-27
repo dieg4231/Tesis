@@ -148,7 +148,7 @@ class cvBridgeDemo():
         
         
         self.pub_indices.publish(landmarks_pub)
-        cv2.imshow("out",imageCopy)
+        i#cv2.imshow("out",imageCopy)
 
 
 

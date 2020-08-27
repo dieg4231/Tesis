@@ -59,7 +59,7 @@ int main(int argc, char** argv)
     landmarks.color = color;
 
 
-    landmarks.header.frame_id = "camera_link";
+    landmarks.header.frame_id = "base_link";
     landmarks.header.stamp = ros::Time();
     landmarks.ns = "my_namespace2";
     landmarks.id = 0;
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
     landmarks.scale.z = .15;
 
 
-    title.header.frame_id = "camera_link";
+    title.header.frame_id = "base_link";
     title.header.stamp = ros::Time();
     //title.ns = "my_namespace3";
     title.id = 0;

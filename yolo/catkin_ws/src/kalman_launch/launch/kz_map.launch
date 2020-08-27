@@ -4,9 +4,7 @@
     
     <include file="$(find kalman_launch)/launch/kz.launch" />
 
-    <node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
-		<param name="max_dist" value="4.0"/>
-	</node>
+    
     
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
@@ -64,5 +62,11 @@
 				<param name="initial_cov_yy" value="0.1"/>
 				<param name="initial_cov_aa" value="0.1"/ -->
 	</node>
+
+	<node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
+		<param name="max_dist" value="4.0"/>
+	</node>
+
+	
 </launch>
 

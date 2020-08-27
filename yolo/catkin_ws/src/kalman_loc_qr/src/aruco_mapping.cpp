@@ -25,6 +25,7 @@
 
 double max_dist = 100;
 std::string max_dist_string;
+std::string::size_type sz;     // alias of size_t
 
 std::vector<std::vector<geometry_msgs::PointStamped>> points_acumulado;
 std::vector<int> ids_acumulado;
@@ -137,12 +138,13 @@ main (int argc, char** argv)
   if(ros::param::has("~max_dist"))
   {
     
-    ros::param::get("~max_dist", max_dist_string );
-    max_dist = std::stod (max_dist_string);
+    ros::param::get("~max_dist", max_dist );
+    //max_dist = atof(max_dist_string.c_str());
     if( max_dist < 0)
     {
       return 0;
     }
+    std::cout << "max_dist: " <<  max_dist  << std::endl;
    
   }
   else

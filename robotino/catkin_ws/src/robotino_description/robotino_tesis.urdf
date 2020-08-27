@@ -120,7 +120,7 @@
 
 <!-- Kinect o stereo camera-->
 
-  <link name="depth_device_link">
+  <link name="zed_link">
     <visual>
       <geometry>
         <box size="0.03 0.14 0.0175"/>
@@ -131,7 +131,7 @@
 
  <joint name="base_to_kinect" type="fixed">
     <parent link="base_link"/>
-    <child link="depth_device_link"/>
+    <child link="zed_link"/>
     <origin rpy="0 0 0" xyz="0.17 0.0 0.78"/>
   </joint>
 

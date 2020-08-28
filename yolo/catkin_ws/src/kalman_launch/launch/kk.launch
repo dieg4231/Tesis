@@ -15,9 +15,7 @@
 
     
     <!-- Une el kinect a la base -->
-    <node pkg="tf" type="static_transform_publisher" name="kinect_camera_to_kinect_link" args="0 0 0 0 0 0 depth_device_link camera_link  50"/> 
-
-    
+    <node pkg="tf" type="static_transform_publisher" name="kinect_camera_to_kinect_link" args="0 0 0 0 0 0 kinect_link camera_link  50"/> 
 
 
 </launch>

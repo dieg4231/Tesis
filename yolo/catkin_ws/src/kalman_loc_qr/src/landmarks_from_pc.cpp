@@ -19,6 +19,7 @@
 #include <kalman_loc_qr/Landmarks.h>
 #include <kalman_loc_qr/ArucoMasks.h>
 
+double caracterizacion_kinect( double);
 
 ros::Publisher pub_cloud;
 ros::Publisher pub_landmarks;
@@ -28,6 +29,39 @@ std::string device;
 
 std::vector<unsigned int> separators;
 std::vector<unsigned int> ids;
+
+
+double caracterizacion_kinect( double lectura)
+{
+  double kinect[] = {202,212,223,233,243,253,263,274,285,295,306,317,327,338,348,359,370,380,390,401,411,424,436,450};
+  double error[] = {2,2,3,3,3,3,3,4,5,5,6,7,7,8,8,9,10,10,10,11,11,14,16,20};
+  int i = 0;
+
+  if( lectura < kinect[0] )
+    return lectura;
+
+  for(i = 0 ; i < 24; i++)
+    if ( kinect[i] > lectura )
+      break;
+
+  lectura = lectura - ( ((lectura - kinect[i-1]) * (error[i] - error[i-1]))/(kinect[i] - kinect[i-1] ) + error[i-1] );
+
+
+  return lectura;
+}
+
+pcl::PointXYZ caracterizacion(pcl::PointXYZ in)
+{
+
+  in.x = caracterizacion_kinect(in.x);
+  in.y = caracterizacion_kinect(in.y);
+  in.z = caracterizacion_kinect(in.z);
+
+  return in;
+
+}
+
+
 
 void 
 cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
@@ -121,14 +155,14 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
       c1.z = aux;
     }
 
+
+    c1 = caracterizacion(c1);
+
     c1.x += 0.17;
     c1.z += 0.78;
 
-
     //std::cout << "ARUCO: " << ids2[i] << " X: " << c1.x << ", Y: " << c1.y << ", Z: " << c1.z << " DIST: " <<  sqrt( pow(c1.x,2)+pow(c1.y,2)+pow(c1.z,2) ) << " Ang: " << atan2(c1.z,c1.x)-(M_PI/2) << std::endl;
     
-    
-
     geometry_msgs::PointStamped point_msgs;
     header.stamp = ros::Time::now();
     point_msgs.header = header;
@@ -221,3 +255,12 @@ main (int argc, char** argv)
   // Spin xD
   ros::spin ();
 }
+
+
+
+
+
+
+
+
+

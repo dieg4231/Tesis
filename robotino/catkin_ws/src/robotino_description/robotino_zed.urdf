@@ -132,10 +132,7 @@
  <joint name="base_to_kinect" type="fixed">
     <parent link="base_link"/>
     <child link="zed_link"/>
-    <origin rpy="0 0 0" xyz="0.17 0.0 0.78"/>
+    <origin rpy="0 0 0" xyz="0.18 0.0 0.835"/>
   </joint>
-
-
-
 </robot>
 

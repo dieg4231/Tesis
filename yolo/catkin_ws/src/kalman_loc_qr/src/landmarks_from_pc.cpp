@@ -19,7 +19,7 @@
 #include <kalman_loc_qr/Landmarks.h>
 #include <kalman_loc_qr/ArucoMasks.h>
 
-double caracterizacion_kinect( double);
+double caracterizacion_sensor (double);
 
 ros::Publisher pub_cloud;
 ros::Publisher pub_landmarks;
@@ -31,34 +31,56 @@ std::vector<unsigned int> separators;
 std::vector<unsigned int> ids;
 
 
-double caracterizacion_kinect( double lectura)
+double caracterizacion_sensor( double lectura)
 {
-  double kinect[] = {202,212,223,233,243,253,263,274,285,295,306,317,327,338,348,359,370,380,390,401,411,424,436,450};
-  double error[] = {2,2,3,3,3,3,3,4,5,5,6,7,7,8,8,9,10,10,10,11,11,14,16,20};
-  int i = 0;
+  int size,i,s;
+  double sensor[2][36] = {
+                       {202,212,223,233,243,253,263,274,285,295,306,317,327,338,348,359,370,380,390,401,411,424,436,450},//KINECT
+                       {72,82,93,102,112,122,133,143,154,164,174,186,196,208,218,232,244,250,265,274,281,298,304,312,333,346,353,368,382,389,402,410,420,426,446,454} //ZED
+                      };
+  double error[2][36] = {
+                    {2,2,3,3,3,3,3,4,5,5,6,7,7,8,8,9,10,10,10,11,11,14,16,20},//KINECT
+                    {2,2,3,2,2,2,3,3,4,4,4,6,6,8,8,12,14,10,15,14,11,18,14,12,23,26,23,28,32,29,32,30,30,26,36,34}//zed
+                  
+                  };
+  if(device.compare("kinect") == 0) // kinect
+  {
+    size =  24;
+    s = 0;
+  }
+  else // ZED
+  {
+    size = 36;
+    s = 1;
+  }
+  
 
-  if( lectura < kinect[0] )
+  if( lectura < sensor[s][0] )
+    return lectura;
+  
+  if( lectura > sensor[s][size-1] )
     return lectura;
 
-  for(i = 0 ; i < 24; i++)
-    if ( kinect[i] > lectura )
+  for(i = 0 ; i < size; i++)
+    if ( sensor[s][i] > lectura )
       break;
 
-  lectura = lectura - ( ((lectura - kinect[i-1]) * (error[i] - error[i-1]))/(kinect[i] - kinect[i-1] ) + error[i-1] );
+  lectura = lectura - ( ((lectura - sensor[s][i-1]) * (error[s][i] - error[s][i-1]))/(sensor[s][i] - sensor[s][i-1] ) + error[s][i-1] );
 
 
   return lectura;
 }
 
+
+
 pcl::PointXYZ caracterizacion(pcl::PointXYZ in)
 {
 
-  in.x = caracterizacion_kinect(in.x);
-  in.y = caracterizacion_kinect(in.y);
-  in.z = caracterizacion_kinect(in.z);
+    in.x = caracterizacion_sensor(in.x);
+    in.y = caracterizacion_sensor(in.y);
+    in.z = caracterizacion_sensor(in.z);
 
   return in;
-
 }
 
 

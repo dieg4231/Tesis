@@ -64,7 +64,7 @@
 	</node>
 
 	<node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
-		<param name="max_dist" value="4.0"/>
+		<param name="max_dist" value="2.0"/>
 	</node>
 
 	

@@ -13,6 +13,8 @@ std::string mapfile;
 
 int main(int argc, char** argv)
 {
+  ros::init(argc, argv, "map_rviz_node");
+  ros::NodeHandle n;
     
     if(ros::param::has("~mapfile"))
   {
@@ -95,8 +97,6 @@ int main(int argc, char** argv)
 
     }
 
-  ros::init(argc, argv, "map_rviz_node");
-  ros::NodeHandle n;
   ros::Publisher vis_qr_map = n.advertise<visualization_msgs::Marker>( "map_marker", 0 );
   ros::Publisher vis_qr_map_titles = n.advertise<visualization_msgs::MarkerArray>( "map_marker_titles", 0 );
   

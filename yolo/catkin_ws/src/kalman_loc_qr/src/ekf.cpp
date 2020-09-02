@@ -94,10 +94,51 @@ int swi;
 double theta_track;
 bool debug=0;
 
+*/
+
+
+double sample_motion_model_odometry(double *x, double *y, double *theta)
+{
+	double d_rot1, d_rot1_hat;
+	double d_rot2, d_rot2_hat;
+	double d_trans1, d_trans1_hat;
+	
+	double x_bar_p = robot_odom.pose.pose.position.x;
+	double y_bar_p = robot_odom.pose.pose.position.y;
+	double theta_bar_p;
+
+	double x_bar = robot_odom_1.pose.pose.position.x;
+	double y_bar = robot_odom_1.pose.pose.position.y;
+	double theta_bar;
+	double roll, pitch;
+
+	tf2::Quaternion quat_tf_1, quat_tf;
+	tf2::fromMsg(robot_odom_1.pose.pose.orientation, quat_tf_1);
+	tf2::fromMsg(robot_odom.pose.pose.orientation, quat_tf);
+	tf2::Matrix3x3 m( quat_tf );
+	tf2::Matrix3x3 m_1( quat_tf_1 );
+	m.getRPY(roll, pitch, theta_bar);
+	m_1.getRPY(roll, pitch, theta_bar_p);
 
 
 
-bool ekf (simulator::simulator_base::Request  &req ,simulator::simulator_base::Response &res)
+	d_rot1 = atan2(y_bar_p - y_bar, x_bar_p - x_bar ) - theta_bar;
+	d_trans1 = sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2)  );
+	d_rot2 = theta_bar_p - theta_bar - d_rot1;
+
+	d_rot1_hat =  d_rot1 - sample( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
+	d_trans1_hat = d_trans1 - sample( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
+	d_rot2_hat = d_rot2 - sample(alfa1 * pow(d_rot2,2) + alfa2 * pow(d_trans1,2));
+
+	*x = *x + d_trans1 * cos( *theta + d_rot1_hat );
+	*y = *y + d_trans1 * sin( *theta + d_rot1_hat );
+	*theta = *theta + d_rot1_hat + d_rot2_hat;
+
+	return  d_rot1_hat;
+
+}
+
+bool ekf ()
 {
 	float theta;
 	float dist;
@@ -142,10 +183,12 @@ bool ekf (simulator::simulator_base::Request  &req ,simulator::simulator_base::R
 		swi = 1;
 
 		if(debug)std::cout << "Inicio: \n" << x_ << "\n ------\n";
-	    theta = x_(2) + req.theta;
+	    
+		
+		theta = x_(2) + req.theta;
 		x_(0) = x_(0) + req.distance * cos(theta) ;
 		x_(1) = x_(1) + req.distance * sin(theta) ;
-		x_(2) = theta; 
+		x_(2) = theta;
 	    
 	    vf <<  	1, 0, -req.distance * sin(theta), 0, 1,  req.distance * cos(theta), 0, 0,  1;
 		p = vf * p * vf.transpose() + q;
@@ -303,14 +346,10 @@ int main(int argc, char *argv[])
 {
 	ros::init(argc, argv, "Nodo_ekf");
 	ros::NodeHandle nh;
-
   	ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 0, landmarksPointCallBack);
   	ros::Subscriber odom_sub = nh.subscribe("odom", 0, odomCallback);
 	
-	
-
 	ros::Rate rate(10);
-
 	while(odom_sub.getNumPublishers() == 0)
 	{
 		rate.sleep();
@@ -330,7 +369,6 @@ int main(int argc, char *argv[])
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
 	double min_dist_update = .2;
-
 
 	double min_angle_update = 1.5707;//0.03490658503;// 2grados
 	while(ros::ok())
@@ -355,6 +393,10 @@ int main(int argc, char *argv[])
 		tf2::Matrix3x3 mtx_rot( quat_r );
 		mtx_rot.getRPY(roll, pitch, yaw);
 
+		
+
+
+
     	if( 
 			( sqrt(pow(robot_odom_1.pose.pose.position.x - robot_odom.pose.pose.position.x,2) + pow(robot_odom_1.pose.pose.position.y - robot_odom.pose.pose.position.y,2)) > min_dist_update )
 			 
@@ -363,12 +405,14 @@ int main(int argc, char *argv[])
 			
 			ROS_INFO("Actualizacion position");
 			robot_odom_1 = robot_odom;
+			ekf();
 			
 		}
-		if (( fabs(yaw) > min_angle_update ))
+		else if (( fabs(yaw) > min_angle_update ))
 		{
 			ROS_INFO("Actualizacion orientation");
 			robot_odom_1 = robot_odom;
+			ekf();
 		}
 		
 		std::cout << yaw << std::endl;

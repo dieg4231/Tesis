@@ -125,6 +125,10 @@ double pf_ran_gaussian(double sigma)
   return(sigma * x2 * sqrt(-2.0*log(w)/w));
 }
 
+double normalize(double z)
+{
+  return atan2(sin(z),cos(z));
+}
 
 double getYawFromQuaternion(geometry_msgs::Quaternion quat)
 {
@@ -159,14 +163,14 @@ double sample_motion_model_odometry(Eigen::Vector3d &x_vector)
 	std::cout << "theta_bar_p: " << theta_bar_p << "\n";
 	std::cout << "theta_bar: " <<  theta_bar  << "\n";
 
-	if( sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2) < .01) ) // 
-		d_rot1 = 0; // Si solo gira  y este valor no es cero entonces  d_rot2 = - d_rot1 y el angulo final es practicamente el mismo  que el inicial :o alv
-	else
-		d_rot1 = atan2(y_bar_p - y_bar, x_bar_p - x_bar ) - theta_bar;
+	//if( sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2) < .01) ) // 
+		//d_rot1 = 0; // Si solo gira  y este valor no es cero entonces  d_rot2 = - d_rot1 y el angulo final es practicamente el mismo  que el inicial :o alv
+	//else
+		d_rot1 = normalize(normalize(atan2(y_bar_p - y_bar, x_bar_p - x_bar )) - normalize(theta_bar));//atan2(y_bar_p - y_bar, x_bar_p - x_bar ) - theta_bar;
 
 
 	d_trans1 = sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2)  );
-	d_rot2 = theta_bar_p - theta_bar - d_rot1;
+	d_rot2 = normalize(normalize(theta_bar_p) - normalize(theta_bar + d_rot1)); //theta_bar_p - theta_bar - d_rot1;
 
 	d_rot1_hat =  d_rot1 ;//- pf_ran_gaussian( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
 	d_trans1_hat = d_trans1 ;//- pf_ran_gaussian( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
@@ -211,15 +215,16 @@ bool ekf ()
 	    q << pow(stddev_distance,2), 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;
 		x_ << robot_odom_1.pose.pose.position.x ,robot_odom_1.pose.pose.position.y, getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
-		if(x_(2) > M_PI) x_(2) -= 2 * M_PI;
-		if(x_(2) < M_PI) x_(2) += 2 * M_PI;
+		//if(x_(2) > M_PI) x_(2) -= 2 * M_PI;
+		//if(x_(2) < M_PI) x_(2) += 2 * M_PI;
+		x_(2) = normalize(x_(2));
 		
 		
 
 	}
 
 	 // Prediction step
-		
+
 		
 	
 		if(debug)std::cout << "Inicio: \n" << x_ << "\n ------\n";
@@ -227,6 +232,8 @@ bool ekf ()
 
 		translation = sample_motion_model_odometry(x_);
 		x_(2) = atan2(sin(x_(2)),cos(x_(2)));
+
+		if(debug)std::cout << "despues: \n" << x_ << "\n ------\n";
 		/*
 		theta = x_(2) + req.theta;
 		x_(0) = x_(0) + req.distance * cos(theta) ;

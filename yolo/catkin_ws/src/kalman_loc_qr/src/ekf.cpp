@@ -5,6 +5,7 @@
 #include <geometry_msgs/PointStamped.h>
 
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Quaternion.h>
 
 #include <std_msgs/UInt32MultiArray.h>
 #include <std_msgs/UInt32.h>
@@ -29,7 +30,17 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+//kalman ?
+#include <Eigen/Dense>
 
+
+nav_msgs::Odometry robot_odom;
+nav_msgs::Odometry robot_odom_1;
+
+double alfa1 = 0.00001;
+double alfa2 = 0.00001;
+double alfa3 = 0.00001;
+double alfa4 = 0.00001;
 
 
 
@@ -62,17 +73,17 @@ geometry_msgs::PoseWithCovariance  actualizacion;
 
 parameters params;
 
+*/
+Eigen::Matrix3d q;            // Error del proceso 
+Eigen::Matrix3d r;            // Error de medicion  
+Eigen::Matrix3d p;            // Matriz de covarianza
+Eigen::Matrix3d H;            // Jacobiano de la funcion H
+Eigen::Vector3d x_;           // Vector de estado
+Eigen::Matrix3d s;            // s xD
+Eigen::Matrix3d k;            // ganancia de Kalman
+Eigen::Matrix3d I;           // Identity Matrix
 
-Matrix3d q;            // Error del proceso 
-Matrix3d r;            // Error de medicion  
-Matrix3d p;            // Matriz de covarianza
-Matrix3d H;            // Jacobiano de la funcion H
-Vector3d x_;           // Vector de estado
-Matrix3d s;            // s xD
-Matrix3d k;            // ganancia de Kalman
-Matrix3d I;           // Identity Matrix
-
-
+/*
 
 typedef struct LandMark_ {
         float x; //Coordenada del robot x
@@ -81,8 +92,7 @@ typedef struct LandMark_ {
         float t; //Angulo del landmark respecto al robot
 } LandMark;
 
-double stddev_distance = 0.03;
-double stddev_theta = 0.174533;
+
 
 std::vector<LandMark> objs;
 
@@ -95,9 +105,40 @@ double theta_track;
 bool debug=0;
 
 */
+double stddev_distance = 0.03;
+double stddev_theta = 0.174533;
 
 
-double sample_motion_model_odometry(double *x, double *y, double *theta)
+double pf_ran_gaussian(double sigma)
+{
+  double x1, x2, w, r;
+
+  do
+  {
+    do { r = drand48(); } while (r==0.0);
+    x1 = 2.0 * r - 1.0;
+    do { r = drand48(); } while (r==0.0);
+    x2 = 2.0 * r - 1.0;
+    w = x1*x1 + x2*x2;
+  } while(w > 1.0 || w==0.0);
+
+  return(sigma * x2 * sqrt(-2.0*log(w)/w));
+}
+
+
+double getYawFromQuaternion(geometry_msgs::Quaternion quat)
+{
+	double roll, pitch, yaw; 
+	tf2::Quaternion quat_tf;
+	tf2::fromMsg(quat, quat_tf);
+	tf2::Matrix3x3 m( quat_tf );
+	m.getRPY(roll, pitch, yaw);
+	//yaw = atan2( (float)yaw );
+	return yaw;
+}
+
+
+double sample_motion_model_odometry(Eigen::Vector3d &x_vector)
 {
 	double d_rot1, d_rot1_hat;
 	double d_rot2, d_rot2_hat;
@@ -112,89 +153,93 @@ double sample_motion_model_odometry(double *x, double *y, double *theta)
 	double theta_bar;
 	double roll, pitch;
 
-	tf2::Quaternion quat_tf_1, quat_tf;
-	tf2::fromMsg(robot_odom_1.pose.pose.orientation, quat_tf_1);
-	tf2::fromMsg(robot_odom.pose.pose.orientation, quat_tf);
-	tf2::Matrix3x3 m( quat_tf );
-	tf2::Matrix3x3 m_1( quat_tf_1 );
-	m.getRPY(roll, pitch, theta_bar);
-	m_1.getRPY(roll, pitch, theta_bar_p);
+	theta_bar =  getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
+	theta_bar_p =  getYawFromQuaternion(robot_odom.pose.pose.orientation);
+
+	std::cout << "theta_bar_p: " << theta_bar_p << "\n";
+	std::cout << "theta_bar: " <<  theta_bar  << "\n";
+
+	if( sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2) < .01) ) // 
+		d_rot1 = 0; // Si solo gira  y este valor no es cero entonces  d_rot2 = - d_rot1 y el angulo final es practicamente el mismo  que el inicial :o alv
+	else
+		d_rot1 = atan2(y_bar_p - y_bar, x_bar_p - x_bar ) - theta_bar;
 
 
-
-	d_rot1 = atan2(y_bar_p - y_bar, x_bar_p - x_bar ) - theta_bar;
 	d_trans1 = sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2)  );
 	d_rot2 = theta_bar_p - theta_bar - d_rot1;
 
-	d_rot1_hat =  d_rot1 - sample( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
-	d_trans1_hat = d_trans1 - sample( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
-	d_rot2_hat = d_rot2 - sample(alfa1 * pow(d_rot2,2) + alfa2 * pow(d_trans1,2));
+	d_rot1_hat =  d_rot1 ;//- pf_ran_gaussian( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
+	d_trans1_hat = d_trans1 ;//- pf_ran_gaussian( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
+	d_rot2_hat = d_rot2 ;//- pf_ran_gaussian(alfa1 * pow(d_rot2,2) + alfa2 * pow(d_trans1,2));
 
-	*x = *x + d_trans1 * cos( *theta + d_rot1_hat );
-	*y = *y + d_trans1 * sin( *theta + d_rot1_hat );
-	*theta = *theta + d_rot1_hat + d_rot2_hat;
+	x_vector(0) = x_vector(0) + d_trans1_hat * cos( x_vector(2) + d_rot1_hat );
+	x_vector(1) = x_vector(1) + d_trans1_hat * sin( x_vector(2) + d_rot1_hat );
+	
 
-	return  d_rot1_hat;
+	std::cout << "Angulo original: " << x_vector(2)<< "\n";
+	std::cout << "Angulo rot1: " <<  d_rot1_hat   << "\n";
+	std::cout << "Angulo rot2: " <<  d_rot2_hat   << "\n";
+
+	x_vector(2) = x_vector(2) + d_rot1_hat + d_rot2_hat;
+
+	std::cout << "Angulo final: " <<  x_vector(2)  << "\n";
+
+	return  d_trans1_hat;
 
 }
+
+int debug = 1, ns =1;
 
 bool ekf ()
 {
 	float theta;
 	float dist;
 	float angle_z_i_t_hat;
-	Vector3d v; // Diference of measurment and predicted measurment
-	Matrix3d vf;
-	Vector3d z_i_t;
-	Vector3d z_i_t_hat;
+	double translation;
+
+	Eigen::Vector3d v; // Diference of measurment and predicted measurment
+	Eigen::Matrix3d vf;
+	Eigen::Vector3d z_i_t;
+	Eigen::Vector3d z_i_t_hat;
 
 	
-	if(req.new_simulation) // Restart variables for new estimation 
-	{
+	if(ns) // Restart variables for new estimation 
+	{   ns = 0;
 		std::cout << "New simulator: " << "\n";
 		r << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
 	    //q << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
 	    q << pow(stddev_distance,2), 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;
-		ros::Duration(0.1).sleep();
-		x_ << params.robot_x ,params.robot_y,params.robot_theta;
+		x_ << robot_odom_1.pose.pose.position.x ,robot_odom_1.pose.pose.position.y, getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
 		if(x_(2) > M_PI) x_(2) -= 2 * M_PI;
 		if(x_(2) < M_PI) x_(2) += 2 * M_PI;
-		swi = 0;
-		position_ideal.clear();
-		position_real.clear();
-		position_kalman.clear();
-
-		position_ideal.push_back(Vector2d(x_(0),x_(1)));
-		position_real.push_back(Vector2d(x_(0),x_(1)));
-		position_kalman.push_back(Vector2d(x_(0),x_(1)));
-		theta_track = x_(2);
-
-		for(int i = 0 ; i < 36; i++)
-		{
-			prediccion.covariance[i] = 0;
-			actualizacion.covariance[i] = 0;
-		}
+		
+		
 
 	}
 
-	if(swi == 0) // Prediction step
-	{	
-		swi = 1;
-
+	 // Prediction step
+		
+		
+	
 		if(debug)std::cout << "Inicio: \n" << x_ << "\n ------\n";
 	    
-		
+
+		translation = sample_motion_model_odometry(x_);
+		x_(2) = atan2(sin(x_(2)),cos(x_(2)));
+		/*
 		theta = x_(2) + req.theta;
 		x_(0) = x_(0) + req.distance * cos(theta) ;
 		x_(1) = x_(1) + req.distance * sin(theta) ;
 		x_(2) = theta;
-	    
-	    vf <<  	1, 0, -req.distance * sin(theta), 0, 1,  req.distance * cos(theta), 0, 0,  1;
+	    */
+
+	    vf <<  	1, 0, -translation * sin(x_(2)), 0, 1,  translation * cos(x_(2)), 0, 0,  1;
 		p = vf * p * vf.transpose() + q;
 		if(debug)std::cout << "Fin prediccion x: \n" << x_ << "\n ------\n";
 		if(debug)std::cout << "Fin prediccion p: \n" << p << "\n ------\n";
 
+		/*
 		theta_track += req.theta;
 		position_ideal.push_back(Vector2d( position_ideal.back()(0) + req.distance * cos(theta_track) ,position_ideal.back()(1) + req.distance * sin(theta_track) ) );
 		
@@ -324,6 +369,7 @@ bool ekf ()
 
 
 */
+}
 
 void landmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
 { 
@@ -333,8 +379,7 @@ void landmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
 }
 
 
-nav_msgs::Odometry robot_odom;
-nav_msgs::Odometry robot_odom_1;
+
 
 void odomCallback(const nav_msgs::Odometry& msg)
 {
@@ -368,9 +413,9 @@ int main(int argc, char *argv[])
 	
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
-	double min_dist_update = .2;
+	double min_dist_update = .02;
 
-	double min_angle_update = 1.5707;//0.03490658503;// 2grados
+	double min_angle_update = 0.03490658503;// 2grados
 	while(ros::ok())
 	{
 		//std::cout << "odom_1 x" << robot_odom_1.pose.pose.orientation.x  << " \n";
@@ -404,20 +449,24 @@ int main(int argc, char *argv[])
 		{
 			
 			ROS_INFO("Actualizacion position");
-			robot_odom_1 = robot_odom;
 			ekf();
+			robot_odom_1 = robot_odom;
+			
 			
 		}
 		else if (( fabs(yaw) > min_angle_update ))
 		{
 			ROS_INFO("Actualizacion orientation");
-			robot_odom_1 = robot_odom;
+			
 			ekf();
+			robot_odom_1 = robot_odom;
 		}
 		
-		std::cout << yaw << std::endl;
+		//std::cout << yaw << std::endl;
 		ros::spinOnce();
 		rate.sleep();
 	}
 
 }
+
+

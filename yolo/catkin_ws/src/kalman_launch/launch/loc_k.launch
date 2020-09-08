@@ -1,0 +1,16 @@
+<launch>
+    <arg name="map_file" default="$(find kalman_loc_qr)/maps/casa.yaml"/>
+    
+    
+    <include file="$(find kalman_launch)/launch/kk.launch" />
+
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    <node name="loc_amcl" pkg="kalman_loc_qr" type="ekf" output="screen">			
+	</node>
+
+	<node name="aruco_mapping" pkg="kalman_loc_qr" type="tf_map_odom" output="screen" >
+    </node>
+
+</launch>
+

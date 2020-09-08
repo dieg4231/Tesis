@@ -168,6 +168,7 @@ void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_
 	double theta_bar;
 	double roll, pitch;
 
+
 	theta_bar =  getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
 	theta_bar_p =  getYawFromQuaternion(robot_odom.pose.pose.orientation);
 
@@ -227,6 +228,7 @@ bool ekf ()
 	    //q << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
 	    q << pow(stddev_distance,2), 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;
+		std::cout << "El odom antes: " <<  robot_odom_1.pose.pose.orientation  << "\n";
 		x_ << robot_odom_1.pose.pose.position.x ,robot_odom_1.pose.pose.position.y, getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
 		//if(x_(2) > M_PI) x_(2) -= 2 * M_PI;
 		//if(x_(2) < M_PI) x_(2) += 2 * M_PI;
@@ -270,12 +272,13 @@ bool ekf ()
 	{
 		swi = 0;
 	*/
+/*
 
 		UPDATE_LANDMARKS_FLAG = false;
 		int id_index;
 		for(int i = 0; i < landmarks_detected.size(); ++i)
 		{	
-			for(id_index = 0; id_index < landmarks_on_map.size(); id_index)
+			for(id_index = 0; id_index < landmarks_on_map.size(); id_index++)
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
 			
@@ -337,7 +340,7 @@ bool ekf ()
 
 		}
 		UPDATE_LANDMARKS_FLAG = true;
-		
+	*/	
 		// Validacion para que el angulo obtenido siempre este entre pi y -pi
 		//if (x_(2) > M_PI)
 		//	x_(2) -= 2*M_PI;
@@ -449,13 +452,15 @@ int main(int argc, char *argv[])
     }
 
 	ros::Rate rate(10);
-	while(odom_sub.getNumPublishers() == 0)
+	while(odom_sub.getNumPublishers() == 0 || robot_odom.pose.pose.orientation.w == 0)
 	{
+		std::cout << "Esperando \n";
 		rate.sleep();
+		ros::spinOnce();
 	};
-	ros::spinOnce();
-
+	
 	robot_odom_1 = robot_odom;
+	std::cout << "El odomsoso: " <<  robot_odom.pose.pose.orientation  << "\n";
 	
 	//double roll_1, pitch_1, yaw_1;
 	//tf::Matrix3x3 mtx_rot_1(robot_odom_1.pose.orientation);
@@ -467,9 +472,9 @@ int main(int argc, char *argv[])
 	
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
-	double min_dist_update = .02;
+	double min_dist_update = .1;
 
-	double min_angle_update = 0.03490658503;// 2grados
+	double min_angle_update = 0.03490658503*10;// 2grados
 	while(ros::ok())
 	{
 		//std::cout << "odom_1 x" << robot_odom_1.pose.pose.orientation.x  << " \n";

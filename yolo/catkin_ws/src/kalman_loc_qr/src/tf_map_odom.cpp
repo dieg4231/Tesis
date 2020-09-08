@@ -9,7 +9,8 @@
 
 nav_msgs::Odometry ROBOT_ODOM;
 geometry_msgs::PoseWithCovariance  LOCALIZATION_POSE;
-
+geometry_msgs::TransformStamped tf_map_to_odom_;
+ 
 double normalize(double z)
 {
   return atan2(sin(z),cos(z));
@@ -35,6 +36,20 @@ void OdomCallback(const nav_msgs::Odometry& msg)
 void LocalizationEkfCallback(const geometry_msgs::PoseWithCovariance& msg)
 {
     LOCALIZATION_POSE = msg;
+
+    tf_map_to_odom_.transform.translation.x =  LOCALIZATION_POSE.pose.position.x - ROBOT_ODOM.pose.pose.position.x;
+    tf_map_to_odom_.transform.translation.y = LOCALIZATION_POSE.pose.position.y - ROBOT_ODOM.pose.pose.position.y;
+    tf_map_to_odom_.transform.translation.z = 0;
+   
+
+    //std::cout << getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation  )<< "\n";
+    tf2::Quaternion q;
+    q.setRPY(0, 0, normalize( getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) - getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation ) ) );
+    q.normalize();
+    tf_map_to_odom_.transform.rotation.x = q.x();
+    tf_map_to_odom_.transform.rotation.y = q.y();
+    tf_map_to_odom_.transform.rotation.z = q.z();
+    tf_map_to_odom_.transform.rotation.w = q.w();
 }
 
 
@@ -50,7 +65,11 @@ int main(int argc, char *argv[])
 
     int32_t publish_rate_ = 100;
     tf2_ros::TransformBroadcaster tf_br_;
-    geometry_msgs::TransformStamped tf_map_to_odom_;
+
+    tf_map_to_odom_.transform.translation.x =0;
+tf_map_to_odom_.transform.translation.y =0;
+tf_map_to_odom_.transform.translation.z = 0;
+    
 
 
     // set up parent and child frames
@@ -82,19 +101,7 @@ int main(int argc, char *argv[])
 
         // specify actual transformation vectors from odometry
         // NOTE: zeros have to be substituted with actual variable data
-        tf_map_to_odom_.transform.translation.x = LOCALIZATION_POSE.pose.position.x - ROBOT_ODOM.pose.pose.position.x;
-        tf_map_to_odom_.transform.translation.y = LOCALIZATION_POSE.pose.position.y - ROBOT_ODOM.pose.pose.position.y;
-        tf_map_to_odom_.transform.translation.z = 0;
-   
-
-        //std::cout << getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation  )<< "\n";
-        tf2::Quaternion q;
-        q.setRPY(0, 0, normalize( getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) - getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation ) ) );
-        q.normalize();
-        tf_map_to_odom_.transform.rotation.x = q.x();
-        tf_map_to_odom_.transform.rotation.y = q.y();
-        tf_map_to_odom_.transform.rotation.z = q.z();
-        tf_map_to_odom_.transform.rotation.w = q.w();
+        
 
         incremento += .01;
         

@@ -228,3 +228,6 @@ target_link_libraries(landmarks_found ${catkin_LIBRARIES})
 
 add_executable(tf_map_odom src/tf_map_odom.cpp)
 target_link_libraries(tf_map_odom ${catkin_LIBRARIES})
+
+add_executable(odom_readable src/odom_readable.cpp)
+target_link_libraries(odom_readable ${catkin_LIBRARIES})

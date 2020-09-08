@@ -379,7 +379,7 @@ void LandmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
   {
 	landmarks_detected.clear();
 
-	for(int i = 0 ; msg->pointLandmarks.size(); i++)
+	for(int i = 0 ; i < msg->pointLandmarks.size(); i++)
 	{
 		aux.point = msg->pointLandmarks[i].point;
 		aux.id = msg->ids[i];

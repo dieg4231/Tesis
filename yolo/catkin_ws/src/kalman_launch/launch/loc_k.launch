@@ -6,10 +6,10 @@
 
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
-    <node name="loc_amcl" pkg="kalman_loc_qr" type="ekf" output="screen">			
+    <node name="ekf" pkg="kalman_loc_qr" type="ekf" output="screen">			
 	</node>
 
-	<node name="aruco_mapping" pkg="kalman_loc_qr" type="tf_map_odom" output="screen" >
+	<node name="tf_map_odom" pkg="kalman_loc_qr" type="tf_map_odom" output="screen" >
     </node>
 
 </launch>

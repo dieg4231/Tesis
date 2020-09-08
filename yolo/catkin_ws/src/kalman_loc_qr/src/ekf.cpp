@@ -278,6 +278,9 @@ bool ekf ()
 			for(id_index = 0; id_index < landmarks_on_map.size(); id_index)
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
+			
+			std::cout << "landmarks_detected[i].id :" << landmarks_detected[i].id << " landmarks_on_map[id_index].id :" << landmarks_on_map[id_index].id;
+
 
 			if(debug)std::cout << "Centroide x sensor : \n" << landmarks_on_map[id_index].point.x << " , y Sensor: " << landmarks_on_map[id_index].point.y ;
 

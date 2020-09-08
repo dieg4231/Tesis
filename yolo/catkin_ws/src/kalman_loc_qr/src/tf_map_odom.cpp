@@ -49,10 +49,25 @@ int main(int argc, char *argv[])
 
     // set up parent and child frames
     tf_map_to_odom_.header.frame_id = std::string("map");
-    tf_map_to_odom_.child_frame_id = std::string("base_link");
+    tf_map_to_odom_.child_frame_id = std::string("odom");
 
     // set up publish rate
     ros::Rate loop_rate(publish_rate_);
+
+    while(localization_ekf_sub.getNumPublishers() == 0)
+	{
+		loop_rate.sleep();
+        ros::spinOnce();
+	}
+
+    while(odom_sub.getNumPublishers() == 0)
+	{
+		loop_rate.sleep();
+        ros::spinOnce();
+	}
+	
+
+    
 
     double incremento = 0;
     // main loop

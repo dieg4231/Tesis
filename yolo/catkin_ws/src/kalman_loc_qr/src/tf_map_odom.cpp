@@ -10,6 +10,12 @@
 nav_msgs::Odometry ROBOT_ODOM;
 geometry_msgs::PoseWithCovariance  LOCALIZATION_POSE;
 
+double normalize(double z)
+{
+  return atan2(sin(z),cos(z));
+}
+
+
 double getYawFromQuaternion(geometry_msgs::Quaternion quat)
 {
 	double roll, pitch, yaw; 
@@ -18,7 +24,7 @@ double getYawFromQuaternion(geometry_msgs::Quaternion quat)
 	tf2::Matrix3x3 m( quat_tf );
 	m.getRPY(roll, pitch, yaw);
 	//yaw = atan2( (float)yaw );
-	return yaw;
+	return normalize(yaw);
 }
 
 void OdomCallback(const nav_msgs::Odometry& msg)
@@ -67,8 +73,6 @@ int main(int argc, char *argv[])
 	}
 	
 
-    
-
     double incremento = 0;
     // main loop
     while (ros::ok())
@@ -82,8 +86,11 @@ int main(int argc, char *argv[])
         tf_map_to_odom_.transform.translation.y = LOCALIZATION_POSE.pose.position.y - ROBOT_ODOM.pose.pose.position.y;
         tf_map_to_odom_.transform.translation.z = 0;
    
+
+        std::cout << getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation  )<< "\n";
         tf2::Quaternion q;
-        q.setRPY(0, 0, getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) - getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation ));
+        q.setRPY(0, 0, normalize( getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) - getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation ) ) );
+        q.normalize();
         tf_map_to_odom_.transform.rotation.x = q.x();
         tf_map_to_odom_.transform.rotation.y = q.y();
         tf_map_to_odom_.transform.rotation.z = q.z();

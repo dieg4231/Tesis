@@ -348,9 +348,7 @@ bool ekf ()
 		localizatio_pose.pose.position.y = x_(1);
 		localizatio_pose.pose.position.z = 0;
 
-		localizatio_pose.pose.orientation.x = 0;
-		localizatio_pose.pose.orientation.y = 0;
-		localizatio_pose.pose.orientation.z = x_(2);
+		localizatio_pose.pose.orientation = tf::createQuaternionMsgFromYaw(x_(2));
 
 		localizatio_pose.covariance[0] = p(0,0);
 		localizatio_pose.covariance[1] = p(0,1);
@@ -417,13 +415,15 @@ int main(int argc, char *argv[])
 	int id;
 	double x,y,z;
 
-	localizatio_pose.pose.position.x = x_(0) - robot_odom.pose.pose.position.x;
-	localizatio_pose.pose.position.y = x_(1) - robot_odom.pose.pose.position.y;
+	localizatio_pose.pose.position.x = 0 ;
+	localizatio_pose.pose.position.y = 0 ;
 	localizatio_pose.pose.position.z = 0;
 
 	localizatio_pose.pose.orientation.x = 0;
 	localizatio_pose.pose.orientation.y = 0;
-	localizatio_pose.pose.orientation.z = x_(2) - getYawFromQuaternion( robot_odom.pose.pose.orientation );
+	localizatio_pose.pose.orientation.z = 0 ;
+	localizatio_pose.pose.orientation.w = 1 ;
+
 
 	localizatio_pose.covariance[0] = p(0,0);
 	localizatio_pose.covariance[1] = p(0,1);

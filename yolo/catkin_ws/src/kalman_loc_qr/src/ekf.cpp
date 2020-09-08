@@ -83,6 +83,7 @@ geometry_msgs::PoseWithCovariance  actualizacion;
 parameters params;
 
 */
+ros::Publisher pose_pub;
 geometry_msgs::PoseWithCovariance  localizatio_pose;
 
 Eigen::Matrix3d q;            // Error del proceso 
@@ -175,9 +176,9 @@ void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_
 	std::cout << "theta_bar_p: " << theta_bar_p << "\n";
 	std::cout << "theta_bar: " <<  theta_bar  << "\n";
 
-	//if( sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2) < .01) ) // 
-		//d_rot1 = 0; // Si solo gira  y este valor no es cero entonces  d_rot2 = - d_rot1 y el angulo final es practicamente el mismo  que el inicial :o alv
-	//else
+	if( sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2) < .01) ) // 
+		d_rot1 = 0; // Si solo gira  y este valor no es cero entonces  d_rot2 = - d_rot1 y el angulo final es practicamente el mismo  que el inicial :o alv
+	else
 		d_rot1 = normalize(normalize(atan2(y_bar_p - y_bar, x_bar_p - x_bar )) - normalize(theta_bar));//atan2(y_bar_p - y_bar, x_bar_p - x_bar ) - theta_bar;
 
 
@@ -272,7 +273,7 @@ bool ekf ()
 	{
 		swi = 0;
 	*/
-/*
+
 
 		UPDATE_LANDMARKS_FLAG = false;
 		int id_index;
@@ -340,7 +341,7 @@ bool ekf ()
 
 		}
 		UPDATE_LANDMARKS_FLAG = true;
-	*/	
+	
 		// Validacion para que el angulo obtenido siempre este entre pi y -pi
 		//if (x_(2) > M_PI)
 		//	x_(2) -= 2*M_PI;
@@ -366,7 +367,7 @@ bool ekf ()
 		localizatio_pose.covariance[31] = p(2,1);
 		localizatio_pose.covariance[35] = p(2,2);
 
-
+		pose_pub.publish(localizatio_pose);
 		if(debug)std::cout << "Prediccion Final: \n" << x_ << "\n ------\n";
 
 		return true;
@@ -411,7 +412,7 @@ int main(int argc, char *argv[])
 	ros::NodeHandle nh;
   	ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 0, LandmarksPointCallBack);
   	ros::Subscriber odom_sub = nh.subscribe("odom", 0, odomCallback);
-	ros::Publisher pose_pub = nh.advertise<geometry_msgs::PoseWithCovariance>("localization_ekf", 0);
+	pose_pub = nh.advertise<geometry_msgs::PoseWithCovariance>("localization_ekf", 0);
 	
 	landmarks_on_map.clear();
 	Landmark aux;
@@ -520,7 +521,7 @@ int main(int argc, char *argv[])
 		}
 		
 		//std::cout << yaw << std::endl;
-		pose_pub.publish(localizatio_pose);
+		//pose_pub.publish(localizatio_pose);
 		ros::spinOnce();
 		rate.sleep();
 	}

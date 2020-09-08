@@ -72,6 +72,27 @@ tf_map_to_odom_.transform.translation.z = 0;
     
 
 
+
+
+
+tf_map_to_odom_.transform.rotation.x = 0;
+    tf_map_to_odom_.transform.rotation.y = 0;
+    tf_map_to_odom_.transform.rotation.z = 0;
+    tf_map_to_odom_.transform.rotation.w = 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // set up parent and child frames
     tf_map_to_odom_.header.frame_id = std::string("map");
     tf_map_to_odom_.child_frame_id = std::string("odom");

@@ -3,6 +3,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/PoseWithCovariance.h>
 
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Quaternion.h>
@@ -34,6 +35,16 @@
 #include <Eigen/Dense>
 
 
+int debug = 1, ns =1;
+bool UPDATE_LANDMARKS_FLAG = true;
+struct Landmark {
+   geometry_msgs::Point  point;
+   int  id;
+} ;  
+
+std::vector<Landmark> landmarks_detected;
+std::vector<Landmark> landmarks_on_map;
+
 nav_msgs::Odometry robot_odom;
 nav_msgs::Odometry robot_odom_1;
 
@@ -41,8 +52,6 @@ double alfa1 = 0.00001;
 double alfa2 = 0.00001;
 double alfa3 = 0.00001;
 double alfa4 = 0.00001;
-
-
 
 /*
 Kalaman filter as "Probabilistic robotics page: 204"
@@ -74,6 +83,8 @@ geometry_msgs::PoseWithCovariance  actualizacion;
 parameters params;
 
 */
+geometry_msgs::PoseWithCovariance  localizatio_pose;
+
 Eigen::Matrix3d q;            // Error del proceso 
 Eigen::Matrix3d r;            // Error de medicion  
 Eigen::Matrix3d p;            // Matriz de covarianza
@@ -142,7 +153,7 @@ double getYawFromQuaternion(geometry_msgs::Quaternion quat)
 }
 
 
-double sample_motion_model_odometry(Eigen::Vector3d &x_vector)
+void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_rotation1, double *translation )
 {
 	double d_rot1, d_rot1_hat;
 	double d_rot2, d_rot2_hat;
@@ -179,27 +190,29 @@ double sample_motion_model_odometry(Eigen::Vector3d &x_vector)
 	x_vector(0) = x_vector(0) + d_trans1_hat * cos( x_vector(2) + d_rot1_hat );
 	x_vector(1) = x_vector(1) + d_trans1_hat * sin( x_vector(2) + d_rot1_hat );
 	
+	*theta_plus_rotation1 = x_vector(2) + d_rot1_hat;
+	*translation = d_trans1_hat;
 
-	std::cout << "Angulo original: " << x_vector(2)<< "\n";
+	std::cout << "Angulo original: " << x_vector(2) << "\n";
 	std::cout << "Angulo rot1: " <<  d_rot1_hat   << "\n";
 	std::cout << "Angulo rot2: " <<  d_rot2_hat   << "\n";
 
 	x_vector(2) = x_vector(2) + d_rot1_hat + d_rot2_hat;
 
+	x_vector(2) = normalize(x_(2));
 	std::cout << "Angulo final: " <<  x_vector(2)  << "\n";
-
-	return  d_trans1_hat;
 
 }
 
-int debug = 1, ns =1;
+
+
 
 bool ekf ()
 {
 	float theta;
 	float dist;
 	float angle_z_i_t_hat;
-	double translation;
+	double translation, theta_plus_rotation1;
 
 	Eigen::Vector3d v; // Diference of measurment and predicted measurment
 	Eigen::Matrix3d vf;
@@ -224,14 +237,12 @@ bool ekf ()
 	}
 
 	 // Prediction step
-
-		
 	
 		if(debug)std::cout << "Inicio: \n" << x_ << "\n ------\n";
 	    
 
-		translation = sample_motion_model_odometry(x_);
-		x_(2) = atan2(sin(x_(2)),cos(x_(2)));
+		sample_motion_model_odometry(x_, &translation, &theta_plus_rotation1 );
+		
 
 		if(debug)std::cout << "despues: \n" << x_ << "\n ------\n";
 		/*
@@ -241,7 +252,7 @@ bool ekf ()
 		x_(2) = theta;
 	    */
 
-	    vf <<  	1, 0, -translation * sin(x_(2)), 0, 1,  translation * cos(x_(2)), 0, 0,  1;
+	    vf <<  	1, 0, -translation * sin(theta_plus_rotation1), 0, 1,  translation * cos(theta_plus_rotation1), 0, 0,  1;
 		p = vf * p * vf.transpose() + q;
 		if(debug)std::cout << "Fin prediccion x: \n" << x_ << "\n ------\n";
 		if(debug)std::cout << "Fin prediccion p: \n" << p << "\n ------\n";
@@ -249,46 +260,37 @@ bool ekf ()
 		/*
 		theta_track += req.theta;
 		position_ideal.push_back(Vector2d( position_ideal.back()(0) + req.distance * cos(theta_track) ,position_ideal.back()(1) + req.distance * sin(theta_track) ) );
-		
+		*/
 
-		prediccion.pose.position.x = x_(0);
-		prediccion.pose.position.y = x_(1);
-		prediccion.pose.position.z = 0;
 
-		prediccion.pose.orientation.x = 0;
-		prediccion.pose.orientation.y = 0;
-		prediccion.pose.orientation.z = x_(2);
-
-		prediccion.covariance[0] = p(0,0);
-		prediccion.covariance[1] = p(0,1);
-		prediccion.covariance[5] = p(0,2);
-		prediccion.covariance[6] = p(1,0);
-		prediccion.covariance[7] = p(1,1);
-		prediccion.covariance[11] = p(1,2);
-		prediccion.covariance[30] = p(2,0);
-		prediccion.covariance[31] = p(2,1);
-		prediccion.covariance[35] = p(2,2);
-
+/*
 		return true;
 	}	
 	else // Actualizacion
 	{
 		swi = 0;
-	
-		for(std::vector<LandMark>::const_iterator mj = objs.begin(); mj != objs.end(); ++mj)
+	*/
+
+		UPDATE_LANDMARKS_FLAG = false;
+		int id_index;
+		for(int i = 0; i < landmarks_detected.size(); ++i)
 		{	
-			if(debug)std::cout << "Centroide x y r t : \n" << mj->x << " , " << mj->y << " , " << mj->r << " , " << mj->t   << "\n ------\n";
-			
-			z_i_t << mj->r , mj->t ,0; // The real measurement
+			for(id_index = 0; id_index < landmarks_on_map.size(); id_index)
+				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
+					break;
+
+			if(debug)std::cout << "Centroide x sensor : \n" << landmarks_on_map[id_index].point.x << " , y Sensor: " << landmarks_on_map[id_index].point.y ;
+
+			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.x,landmarks_detected[i].point.y) ,0; // The real measurement
 			
 			if(debug)std::cout << "z_i_t: \n" << z_i_t << "\n ------\n";
 			
 			// Calculo de las lecturas esperadas respecto a la posicion del robot obtenida en el paso de prediccion
 				
-				dist = pow( mj->x - x_(0),2 ) + pow( mj->y - x_(1) ,2); // Radicando de la de la distancia entre un landmark y el robot 
+				dist = pow( landmarks_on_map[id_index].point.x - x_(0),2 ) + pow( landmarks_on_map[id_index].point.y - x_(1) ,2); // Radicando de la de la distancia entre un landmark y el robot 
 
 				// Angulo del landmark respecto al robot
-				angle_z_i_t_hat  = atan2(mj->y - x_(1), mj->x - x_(0)) - x_(2);
+				angle_z_i_t_hat  = atan2(landmarks_on_map[id_index].point.y - x_(1), landmarks_on_map[id_index].point.x - x_(0)) - x_(2);
 			
 				// Validacion para que el angulo obtenido siempre este entre pi y -pi
 				if (angle_z_i_t_hat > M_PI)
@@ -304,8 +306,8 @@ bool ekf ()
 			// fin calculo de lecturas esperadas
 			
 			// El jacobiano de la funcion h() con respecto al robot	
-			H << -( mj->x - x_(0) ) / sqrt(dist) , -( mj->y - x_(1) ) / sqrt(dist),0,
-			 	  ( mj->y - x_(1) ) / dist, -( mj->x - x_(0) ) / dist,-1,
+			H << -( landmarks_on_map[id_index].point.x - x_(0) ) / sqrt(dist) , -( landmarks_on_map[id_index].point.y - x_(1) ) / sqrt(dist),0,
+			 	  ( landmarks_on_map[id_index].point.y - x_(1) ) / dist, -( landmarks_on_map[id_index].point.x - x_(0) ) / dist,-1,
 			 	  0,0,0; // this row is zero por que  la etiqueta del landmark no depende de la posicion del robot
 			
 			if(debug)std::cout << "H: \n" << H << "\n ------\n";
@@ -331,60 +333,63 @@ bool ekf ()
 			if(debug)std::cout << "P: \n" << p << "\n ------\n";
 
 		}
+		UPDATE_LANDMARKS_FLAG = true;
 		
 		// Validacion para que el angulo obtenido siempre este entre pi y -pi
-		if (x_(2) > M_PI)
-			x_(2) -= 2*M_PI;
-		if (x_(2) < -M_PI)
-			x_(2) += 2*M_PI;
+		//if (x_(2) > M_PI)
+		//	x_(2) -= 2*M_PI;
+		//if (x_(2) < -M_PI)
+		//	x_(2) += 2*M_PI;
+		x_(2) = normalize(x_(2));
 
-		// Arrow for visualization in rviz
-		position_real.push_back(Vector2d(params.robot_x,params.robot_y));
-		position_kalman.push_back(Vector2d(x_(0),x_(1)));
 		
-		arrow.pose.position.x = x_(0);
-		arrow.pose.position.y = x_(1);
-		arrow.pose.position.z = 0;
-		arrow.pose.orientation = tf::createQuaternionMsgFromYaw(x_(2));
+		
+		localizatio_pose.pose.position.x = x_(0);
+		localizatio_pose.pose.position.y = x_(1);
+		localizatio_pose.pose.position.z = 0;
 
+		localizatio_pose.pose.orientation.x = 0;
+		localizatio_pose.pose.orientation.y = 0;
+		localizatio_pose.pose.orientation.z = x_(2);
 
-		actualizacion.pose.position.x = x_(0);
-		actualizacion.pose.position.y = x_(1);
-		actualizacion.pose.position.z = 0;
-
-		actualizacion.pose.orientation.x = 0;
-		actualizacion.pose.orientation.y = 0;
-		actualizacion.pose.orientation.z = x_(2);
-
-		actualizacion.covariance[0] = p(0,0);
-		actualizacion.covariance[1] = p(0,1);
-		actualizacion.covariance[5] = p(0,2);
-		actualizacion.covariance[6] = p(1,0);
-		actualizacion.covariance[7] = p(1,1);
-		actualizacion.covariance[11] = p(1,2);
-		actualizacion.covariance[30] = p(2,0);
-		actualizacion.covariance[31] = p(2,1);
-		actualizacion.covariance[35] = p(2,2);
+		localizatio_pose.covariance[0] = p(0,0);
+		localizatio_pose.covariance[1] = p(0,1);
+		localizatio_pose.covariance[5] = p(0,2);
+		localizatio_pose.covariance[6] = p(1,0);
+		localizatio_pose.covariance[7] = p(1,1);
+		localizatio_pose.covariance[11] = p(1,2);
+		localizatio_pose.covariance[30] = p(2,0);
+		localizatio_pose.covariance[31] = p(2,1);
+		localizatio_pose.covariance[35] = p(2,2);
 
 
 		if(debug)std::cout << "Prediccion Final: \n" << x_ << "\n ------\n";
 
 		return true;
+	
+
+}
+
+
+
+
+void LandmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
+{ 	
+	Landmark aux; 
+
+  if(UPDATE_LANDMARKS_FLAG)
+  {
+	landmarks_detected.clear();
+
+	for(int i = 0 ; msg->pointLandmarks.size(); i++)
+	{
+		aux.point = msg->pointLandmarks[i].point;
+		aux.id = msg->ids[i];
+		landmarks_detected.push_back(aux);
+
 	}
-
+  }
 }
-
-
-*/
-}
-
-void landmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
-{ 
-  
- 
-    
-}
-
 
 
 
@@ -394,13 +399,52 @@ void odomCallback(const nav_msgs::Odometry& msg)
 }
 
 
+
+
 int main(int argc, char *argv[])
 {
 	ros::init(argc, argv, "Nodo_ekf");
 	ros::NodeHandle nh;
-  	ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 0, landmarksPointCallBack);
+  	ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 0, LandmarksPointCallBack);
   	ros::Subscriber odom_sub = nh.subscribe("odom", 0, odomCallback);
+	ros::Publisher pose_pub = nh.advertise<geometry_msgs::PoseWithCovariance>("localization_ekf", 0);
 	
+	landmarks_on_map.clear();
+	Landmark aux;
+
+	std::string path2pack = ros::package::getPath("kalman_loc_qr");
+    std::ifstream infile(path2pack+"/data/landmarks_"+"casakmuybueno"+".txt");
+	int id;
+	double x,y,z;
+
+	localizatio_pose.pose.position.x = x_(0) - robot_odom.pose.pose.position.x;
+	localizatio_pose.pose.position.y = x_(1) - robot_odom.pose.pose.position.y;
+	localizatio_pose.pose.position.z = 0;
+
+	localizatio_pose.pose.orientation.x = 0;
+	localizatio_pose.pose.orientation.y = 0;
+	localizatio_pose.pose.orientation.z = x_(2) - getYawFromQuaternion( robot_odom.pose.pose.orientation );
+
+	localizatio_pose.covariance[0] = p(0,0);
+	localizatio_pose.covariance[1] = p(0,1);
+	localizatio_pose.covariance[5] = p(0,2);
+	localizatio_pose.covariance[6] = p(1,0);
+	localizatio_pose.covariance[7] = p(1,1);
+	localizatio_pose.covariance[11] = p(1,2);
+	localizatio_pose.covariance[30] = p(2,0);
+	localizatio_pose.covariance[31] = p(2,1);
+	localizatio_pose.covariance[35] = p(2,2);
+
+	while (infile >> id >> x >> y >> z)
+    {   
+		ROS_INFO("Id: %d",id );
+        aux.point.x = x;
+        aux.point.y = y;
+        aux.point.z = z;
+		aux.id = id;
+        landmarks_on_map.push_back(aux);
+    }
+
 	ros::Rate rate(10);
 	while(odom_sub.getNumPublishers() == 0)
 	{
@@ -447,8 +491,6 @@ int main(int argc, char *argv[])
 
 		
 
-
-
     	if( 
 			( sqrt(pow(robot_odom_1.pose.pose.position.x - robot_odom.pose.pose.position.x,2) + pow(robot_odom_1.pose.pose.position.y - robot_odom.pose.pose.position.y,2)) > min_dist_update )
 			 
@@ -470,6 +512,7 @@ int main(int argc, char *argv[])
 		}
 		
 		//std::cout << yaw << std::endl;
+		pose_pub.publish(localizatio_pose);
 		ros::spinOnce();
 		rate.sleep();
 	}

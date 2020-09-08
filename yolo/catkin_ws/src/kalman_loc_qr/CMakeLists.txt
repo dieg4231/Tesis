@@ -225,3 +225,6 @@ target_link_libraries(map_qr_loader ${catkin_LIBRARIES})
 
 add_executable(landmarks_found src/landmarks_found.cpp)
 target_link_libraries(landmarks_found ${catkin_LIBRARIES})
+
+add_executable(tf_map_odom src/tf_map_odom.cpp)
+target_link_libraries(tf_map_odom ${catkin_LIBRARIES})

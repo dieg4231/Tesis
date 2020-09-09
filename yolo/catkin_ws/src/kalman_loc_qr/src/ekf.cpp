@@ -48,10 +48,10 @@ std::vector<Landmark> landmarks_on_map;
 nav_msgs::Odometry robot_odom;
 nav_msgs::Odometry robot_odom_1;
 
-double alfa1 = 0.00001;
-double alfa2 = 0.00001;
-double alfa3 = 0.00001;
-double alfa4 = 0.00001;
+double alfa1 = 0.005;
+double alfa2 = 0.005;
+double alfa3 = 0.005;
+double alfa4 = 0.005;
 
 /*
 Kalaman filter as "Probabilistic robotics page: 204"
@@ -185,9 +185,9 @@ void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_
 	d_trans1 = sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2)  );
 	d_rot2 = normalize(normalize(theta_bar_p) - normalize(theta_bar + d_rot1)); //theta_bar_p - theta_bar - d_rot1;
 
-	d_rot1_hat =  d_rot1 ;//- pf_ran_gaussian( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
-	d_trans1_hat = d_trans1 ;//- pf_ran_gaussian( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
-	d_rot2_hat = d_rot2 ;//- pf_ran_gaussian(alfa1 * pow(d_rot2,2) + alfa2 * pow(d_trans1,2));
+	d_rot1_hat =  d_rot1 - pf_ran_gaussian( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
+	d_trans1_hat = d_trans1 - pf_ran_gaussian( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
+	d_rot2_hat = d_rot2 - pf_ran_gaussian(alfa1 * pow(d_rot2,2) + alfa2 * pow(d_trans1,2));
 
 	x_vector(0) = x_vector(0) + d_trans1_hat * cos( x_vector(2) + d_rot1_hat );
 	x_vector(1) = x_vector(1) + d_trans1_hat * sin( x_vector(2) + d_rot1_hat );
@@ -286,9 +286,10 @@ bool ekf ()
 			std::cout << "landmarks_detected[i].id :" << landmarks_detected[i].id << " landmarks_on_map[id_index].id :" << landmarks_on_map[id_index].id;
 
 
-			if(debug)std::cout << "Centroide x sensor : \n" << landmarks_on_map[id_index].point.x << " , y Sensor: " << landmarks_on_map[id_index].point.y ;
+			if(debug)std::cout << "Centroide x sensor : \n" << landmarks_on_map[id_index].point.x << " , y Sensor: " << landmarks_on_map[id_index].point.y << "\n";
+			if(debug)std::cout << "landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << " , landmarks_detected[i].point.y: " << landmarks_detected[i].point.y ;
 
-			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.x,landmarks_detected[i].point.y) ,0; // The real measurement
+			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; // The real measurement
 			
 			if(debug)std::cout << "z_i_t: \n" << z_i_t << "\n ------\n";
 			
@@ -473,9 +474,9 @@ int main(int argc, char *argv[])
 	
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
-	double min_dist_update = .1;
+	double min_dist_update = .05;
 
-	double min_angle_update = 0.03490658503*10;// 2grados
+	double min_angle_update = 0.03490658503*3;// 2grados
 	while(ros::ok())
 	{
 		//std::cout << "odom_1 x" << robot_odom_1.pose.pose.orientation.x  << " \n";

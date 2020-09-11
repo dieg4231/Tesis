@@ -65,7 +65,7 @@ int main(int argc, char** argv)
     landmarks.id = 0;
     landmarks.type = visualization_msgs::Marker::SPHERE_LIST;
     landmarks.action = visualization_msgs::Marker::ADD;
-    landmarks.lifetime = ros::Duration(1);
+    landmarks.lifetime = ros::Duration(.1);
     landmarks.pose.orientation.x = 0.0;
     landmarks.pose.orientation.y = 0.0;
     landmarks.pose.orientation.z = 0.0;
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     title.id = 0;
     title.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     title.action = visualization_msgs::Marker::ADD;
-    title.lifetime = ros::Duration(1);
+    title.lifetime = ros::Duration(.1);
     
     title.scale.z = .15;
     

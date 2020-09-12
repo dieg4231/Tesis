@@ -290,7 +290,7 @@ bool ekf ()
 
 			if(debug)std::cout << "landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << " , landmarks_detected[i].point.y: " << landmarks_detected[i].point.y ;
 
-			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.x,landmarks_detected[i].point.y) ,0; // The real measurement
+			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; // The real measurement
 			
 			if(debug)std::cout << "z_i_t: \n" << z_i_t << "\n ------\n";
 			

@@ -48,10 +48,10 @@ std::vector<Landmark> landmarks_on_map;
 nav_msgs::Odometry robot_odom;
 nav_msgs::Odometry robot_odom_1;
 
-double alfa1 = 0.00001;
-double alfa2 = 0.00001;
-double alfa3 = 0.00001;
-double alfa4 = 0.00001;
+double alfa1 = 0.02;
+double alfa2 = 0.02;
+double alfa3 = 0.02;
+double alfa4 = 0.02;
 
 /*
 Kalaman filter as "Probabilistic robotics page: 204"
@@ -225,9 +225,9 @@ bool ekf ()
 	if(ns) // Restart variables for new estimation 
 	{   ns = 0;
 		std::cout << "New simulator: " << "\n";
-		r << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
+		r << 21.0, 0, 0, 0, 21.0, 0, 0, 0, 0.01;
 	    //q << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
-	    q << 0.00001,0,0,0,0.00001,0,0,0,0.00001; //, 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
+	    q << 0.01,0,0,0,0.01,0,0,0,0.01; //, 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;
 		std::cout << "El odom antes: " <<  robot_odom_1.pose.pose.orientation  << "\n";
 		x_ << robot_odom_1.pose.pose.position.x ,robot_odom_1.pose.pose.position.y, getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
@@ -475,9 +475,9 @@ int main(int argc, char *argv[])
 	
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
-	double min_dist_update = .1;
+	double min_dist_update = .2;
 
-	double min_angle_update = 0.03490658503*10;// 2grados
+	double min_angle_update = 0.03490658503*15;// 2grados
 	while(ros::ok())
 	{
 		//std::cout << "odom_1 x" << robot_odom_1.pose.pose.orientation.x  << " \n";

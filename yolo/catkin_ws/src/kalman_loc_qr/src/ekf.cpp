@@ -225,7 +225,7 @@ bool ekf ()
 	if(ns) // Restart variables for new estimation 
 	{   ns = 0;
 		std::cout << "New simulator: " << "\n";
-		r << 21.0, 0, 0, 0, 21.0, 0, 0, 0, 0.01;
+		r << .06, 0, 0, 0, .60, 0, 0, 0,.06;
 	    //q << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
 	    q << 0.01,0,0,0,0.01,0,0,0,0.01; //, 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;

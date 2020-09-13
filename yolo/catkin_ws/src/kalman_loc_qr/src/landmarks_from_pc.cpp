@@ -121,7 +121,7 @@ cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
   if(device.compare("kinect") == 0 )
   {
 
-    header.frame_id = "camera_depth_optical_frame"; //Kinect
+    header.frame_id = "camera_rgb_optical_frame"; //Kinect
    
   }
   else if( device.compare("zed_stereo") == 0)

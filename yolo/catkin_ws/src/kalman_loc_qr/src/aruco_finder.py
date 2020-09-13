@@ -94,21 +94,6 @@ class cvBridgeDemo():
 
 
                 
-                min_x = markerCorners[i][0][0][0] 
-                min_y = markerCorners[i][0][0][1] 
-
-                max_x = markerCorners[i][0][2][0] 
-                max_y = markerCorners[i][0][2][1]
-                
-                reducttion_x = 0#(max_x-min_x)/4
-                reducttion_y = 0#(max_y-min_y)/4
-
-                min_x += int(reducttion_x)
-                max_x -= int(reducttion_x)
-
-                min_y += int(reducttion_y)
-                max_y -= int(reducttion_y)
-
                 '''
                 array_aux = np.arange( (max_y-min_y+1 )*(max_x-min_x+1 ) )
 
@@ -119,9 +104,32 @@ class cvBridgeDemo():
                         j = j+1
                 '''            
                 ################################
-                c = np.array([markerCorners[i][0][0][0], markerCorners[i][0][1][0], markerCorners[i][0][2][0], markerCorners[i][0][3][0]  ])
-                r = np.array([markerCorners[i][0][0][1], markerCorners[i][0][1][1], markerCorners[i][0][2][1], markerCorners[i][0][3][1]  ])
 
+                x_shrink = 0.5
+                y_shrink = 0.5
+
+                xs = [markerCorners[i][0][0][0], markerCorners[i][0][1][0], markerCorners[i][0][2][0], markerCorners[i][0][3][0]  ];
+                ys = [markerCorners[i][0][0][1], markerCorners[i][0][1][1], markerCorners[i][0][2][1], markerCorners[i][0][3][1]  ];
+
+                x_center = 0.5 * min(xs) + 0.5 * max(xs)
+                y_center = 0.5 * min(ys) + 0.5 * max(ys)
+
+                new_xs = [(j - x_center) * (1 - x_shrink) + x_center for j in xs]
+                new_ys = [(j - y_center) * (1 - y_shrink) + y_center for j in ys]
+
+
+
+                c = np.array(new_xs)
+                r = np.array(new_ys)
+
+                c = c.astype(int)
+                r = r.astype(int)
+
+                #print(c)
+                #c = np.array([markerCorners[i][0][0][0], markerCorners[i][0][1][0], markerCorners[i][0][2][0], markerCorners[i][0][3][0]  ])
+                #r = np.array([markerCorners[i][0][0][1], markerCorners[i][0][1][1], markerCorners[i][0][2][1], markerCorners[i][0][3][1]  ])
+                #print("Bueno")
+                #print(c)
                 rr, cc = polygon(r, c)
 
                 array_aux = np.arange(rr.size)
@@ -148,7 +156,7 @@ class cvBridgeDemo():
         
         
         self.pub_indices.publish(landmarks_pub)
-        #cv2.imshow("out",imageCopy)
+        cv2.imshow("out",imageCopy)
 
 
 

@@ -30,6 +30,7 @@ landmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
 
     for(int i = 0; i < msg->ids.size(); i++) // Todos los ids recibidos
     {
+     
         point.x = msg->pointLandmarks[i].point.x;
         point.y = msg->pointLandmarks[i].point.y;
         point.z = msg->pointLandmarks[i].point.z;
@@ -38,6 +39,9 @@ landmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
         title.pose.position.x = msg->pointLandmarks[i].point.x;
         title.pose.position.y = msg->pointLandmarks[i].point.y;
         title.pose.position.z = msg->pointLandmarks[i].point.z + .3;
+        
+        
+        
         title.id = msg->ids[i];
         landmarks_titles.markers.push_back(title);
 
@@ -59,7 +63,7 @@ int main(int argc, char** argv)
     landmarks.color = color;
 
 
-    landmarks.header.frame_id = "base_link";
+    landmarks.header.frame_id = "base_link";// "camera_link"; //
     landmarks.header.stamp = ros::Time();
     landmarks.ns = "my_namespace2";
     landmarks.id = 0;
@@ -75,7 +79,7 @@ int main(int argc, char** argv)
     landmarks.scale.z = .15;
 
 
-    title.header.frame_id = "base_link";
+    title.header.frame_id = "base_link"; // "camera_link"; //
     title.header.stamp = ros::Time();
     //title.ns = "my_namespace3";
     title.id = 0;
@@ -90,18 +94,14 @@ int main(int argc, char** argv)
     title.color.b = 0;
     title.color.a = 1;
 
-
     ros::init(argc, argv, "landmarks_found_node");
     ros::NodeHandle nh;
-
 
     ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 1, landmarksPointCallBack);
     vis_qr_map = nh.advertise<visualization_msgs::Marker>( "marker_recognized", 0 );
     vis_qr_map_titles = nh.advertise<visualization_msgs::MarkerArray>( "marker_recognized_titles", 0 );
   
     ros::Rate r(10.0);
-  
-
     ros::spin(); 
 
 

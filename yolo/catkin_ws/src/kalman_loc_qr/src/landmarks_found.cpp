@@ -3,6 +3,11 @@
 #include <ros/ros.h>
 #include <kalman_loc_qr/Landmarks.h>
 
+// tf
+
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
+
 // Viz message
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -10,6 +15,7 @@
 #include <string>
 #include <vector>
 
+geometry_msgs::TransformStamped TRANSFORM_STAMPED_BASE_2_DEVICE ;
 
 ros::Publisher vis_qr_map ;
 ros::Publisher vis_qr_map_titles;
@@ -35,12 +41,16 @@ landmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
         point.y = msg->pointLandmarks[i].point.y;
         point.z = msg->pointLandmarks[i].point.z;
 
+        point.x += TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.x;
+		point.y += TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.y;
+		point.z += TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.z;
+
         title.text = "id: "+ std::to_string(msg->ids[i]);
         title.pose.position.x = msg->pointLandmarks[i].point.x;
         title.pose.position.y = msg->pointLandmarks[i].point.y;
         title.pose.position.z = msg->pointLandmarks[i].point.z + .3;
         
-        
+        //ROS_INFO(" x : %f y: %f z: %f", point.x, point.y, point.z );
         
         title.id = msg->ids[i];
         landmarks_titles.markers.push_back(title);
@@ -102,6 +112,31 @@ int main(int argc, char** argv)
     vis_qr_map_titles = nh.advertise<visualization_msgs::MarkerArray>( "marker_recognized_titles", 0 );
   
     ros::Rate r(10.0);
+
+    tf2_ros::Buffer tfBuffer;
+  	tf2_ros::TransformListener tfListener(tfBuffer);
+
+	
+	while (nh.ok()){
+		
+		try{
+		TRANSFORM_STAMPED_BASE_2_DEVICE = tfBuffer.lookupTransform( "base_link","kinect_link",
+								ros::Time(0));
+		ROS_INFO("TF_base_to_device: \n X: %f \n Y: %f \n Z: %f \n -----\n ",TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.x,
+																			TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.y,
+																			TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.z);	
+		break;
+
+		}
+		catch (tf2::TransformException &ex) {
+		ROS_WARN("%s",ex.what());
+		ros::Duration(1.0).sleep();
+		continue;
+		}    
+		r.sleep();
+	}
+
+
     ros::spin(); 
 
 

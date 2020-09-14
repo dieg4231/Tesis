@@ -231,3 +231,6 @@ target_link_libraries(tf_map_odom ${catkin_LIBRARIES})
 
 add_executable(odom_readable src/odom_readable.cpp)
 target_link_libraries(odom_readable ${catkin_LIBRARIES})
+
+add_executable(pruebas src/pruebas.cpp)
+target_link_libraries(pruebas ${catkin_LIBRARIES})

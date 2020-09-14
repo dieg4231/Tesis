@@ -31,10 +31,13 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
+
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
 //kalman ?
 #include <Eigen/Dense>
 
-
+geometry_msgs::TransformStamped TRANSFORM_STAMPED_BASE_2_DEVICE ;
 int debug = 1, ns =1;
 bool UPDATE_LANDMARKS_FLAG = true;
 struct Landmark {
@@ -225,7 +228,7 @@ bool ekf ()
 	if(ns) // Restart variables for new estimation 
 	{   ns = 0;
 		std::cout << "New simulator: " << "\n";
-		r << .06, 0, 0, 0, .60, 0, 0, 0,.06;
+		r << .09, 0, 0, 0, .90, 0, 0, 0,.16;
 	    //q << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
 	    q << 0.01,0,0,0,0.01,0,0,0,0.01; //, 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;
@@ -390,7 +393,14 @@ void LandmarksPointCallBack (const kalman_loc_qr::LandmarksConstPtr& msg)
 
 	for(int i = 0 ; i < msg->pointLandmarks.size(); i++)
 	{
+		
 		aux.point = msg->pointLandmarks[i].point;
+		aux.point.x += TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.x;
+		aux.point.y += TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.y;
+		aux.point.z += TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.z;
+
+		//ROS_INFO(" x : %f y: %f z: %f", aux.point.x, aux.point.y, aux.point.z );
+
 		aux.id = msg->ids[i];
 		landmarks_detected.push_back(aux);
 
@@ -455,6 +465,31 @@ int main(int argc, char *argv[])
     }
 
 	ros::Rate rate(10);
+
+	tf2_ros::Buffer tfBuffer;
+  	tf2_ros::TransformListener tfListener(tfBuffer);
+
+	
+	while (nh.ok()){
+		
+		try{
+		TRANSFORM_STAMPED_BASE_2_DEVICE = tfBuffer.lookupTransform( "base_link","kinect_link",
+								ros::Time(0));
+		ROS_INFO("TF_base_to_device: \n X: %f \n Y: %f \n Z: %f \n -----\n ",TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.x,
+																			TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.y,
+																			TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.z);	
+		break;
+
+		}
+		catch (tf2::TransformException &ex) {
+		ROS_WARN("%s",ex.what());
+		ros::Duration(1.0).sleep();
+		continue;
+		}    
+		rate.sleep();
+	}
+
+
 	while(odom_sub.getNumPublishers() == 0 || robot_odom.pose.pose.orientation.w == 0)
 	{
 		std::cout << "Esperando \n";
@@ -475,9 +510,9 @@ int main(int argc, char *argv[])
 	
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
-	double min_dist_update = .2;
+	double min_dist_update = .5;
 
-	double min_angle_update = 0.03490658503*15;// 2grados
+	double min_angle_update = 0.03490658503;// 2grados
 	while(ros::ok())
 	{
 		//std::cout << "odom_1 x" << robot_odom_1.pose.pose.orientation.x  << " \n";

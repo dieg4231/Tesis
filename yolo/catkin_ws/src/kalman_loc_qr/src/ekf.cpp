@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <XmlRpcException.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <geometry_msgs/Point.h>
@@ -50,42 +51,15 @@ std::vector<Landmark> landmarks_on_map;
 
 nav_msgs::Odometry robot_odom;
 nav_msgs::Odometry robot_odom_1;
-
-double alfa1 = 0.02;
-double alfa2 = 0.02;
-double alfa3 = 0.02;
-double alfa4 = 0.02;
+double initial_x = 0;
+double initial_y = 0;
+double initial_a = 0;
+double ALPHA[4];
 
 /*
 Kalaman filter as "Probabilistic robotics page: 204"
 */
 
-/*
-#include "ros/ros.h"
-#include <ros/package.h>
-#include <random>
-#include <iostream>
-#include <Eigen/Dense>
-#include "simulator/Parameters.h"
-#include "simulator/simulator_parameters.h"
-#include "../utilities/simulator_structures.h"
-#include "simulator/simulator_base.h"
-#include <visualization_msgs/Marker.h>
-#include <tf/transform_broadcaster.h>
-#include "std_msgs/Float32MultiArray.h"
-#include "geometry_msgs/PoseWithCovariance.h"
-using namespace Eigen;
-
-
-
-
-geometry_msgs::PoseWithCovariance  prediccion;
-geometry_msgs::PoseWithCovariance  actualizacion;
-
-
-parameters params;
-
-*/
 ros::Publisher pose_pub;
 geometry_msgs::PoseWithCovariance  localizatio_pose;
 
@@ -98,28 +72,7 @@ Eigen::Matrix3d s;            // s xD
 Eigen::Matrix3d k;            // ganancia de Kalman
 Eigen::Matrix3d I;           // Identity Matrix
 
-/*
 
-typedef struct LandMark_ {
-        float x; //Coordenada del robot x
-        float y; //Coordenada del robot y
-        float r; //Distancia del landmark al robot
-        float t; //Angulo del landmark respecto al robot
-} LandMark;
-
-
-
-std::vector<LandMark> objs;
-
-std::vector<Vector2d> position_ideal;
-std::vector<Vector2d> position_real;
-std::vector<Vector2d> position_kalman;
-
-int swi;
-double theta_track;
-bool debug=0;
-
-*/
 double stddev_distance = 0.03;
 double stddev_theta = 0.174533;
 
@@ -188,9 +141,11 @@ void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_
 	d_trans1 = sqrt(  pow(x_bar - x_bar_p, 2)  +  pow(y_bar - y_bar_p, 2)  );
 	d_rot2 = normalize(normalize(theta_bar_p) - normalize(theta_bar + d_rot1)); //theta_bar_p - theta_bar - d_rot1;
 
-	d_rot1_hat =  d_rot1 ;//- pf_ran_gaussian( alfa1 * pow(d_rot1,2) + alfa2 * pow(d_trans1,2) );
-	d_trans1_hat = d_trans1 ;//- pf_ran_gaussian( alfa3 * pow(d_trans1,2) + alfa4 * pow(d_rot1,2) + alfa4 * pow(d_rot2,2));
-	d_rot2_hat = d_rot2 ;//- pf_ran_gaussian(alfa1 * pow(d_rot2,2) + alfa2 * pow(d_trans1,2));
+
+	d_rot1_hat =  d_rot1 ;//- pf_ran_gaussian( ALPHA[0] * pow(d_rot1,2) + ALPHA[1] * pow(d_trans1,2) );
+	d_trans1_hat = d_trans1 ;//- pf_ran_gaussian( ALPHA[2] * pow(d_trans1,2) + ALPHA[3] * pow(d_rot1,2) + ALPHA[3] * pow(d_rot2,2));
+	d_rot2_hat = d_rot2 ;//- pf_ran_gaussian(ALPHA[0] * pow(d_rot2,2) + ALPHA[1] * pow(d_trans1,2));
+
 
 	x_vector(0) = x_vector(0) + d_trans1_hat * cos( x_vector(2) + d_rot1_hat );
 	x_vector(1) = x_vector(1) + d_trans1_hat * sin( x_vector(2) + d_rot1_hat );
@@ -200,6 +155,7 @@ void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_
 
 	std::cout << "Angulo original: " << x_vector(2) << "\n";
 	std::cout << "Angulo rot1: " <<  d_rot1_hat   << "\n";
+	std::cout << "Traslacion: " <<  d_trans1_hat   << "\n";
 	std::cout << "Angulo rot2: " <<  d_rot2_hat   << "\n";
 
 	x_vector(2) = x_vector(2) + d_rot1_hat + d_rot2_hat;
@@ -228,17 +184,15 @@ bool ekf ()
 	if(ns) // Restart variables for new estimation 
 	{   ns = 0;
 		std::cout << "New simulator: " << "\n";
-		r << .09, 0, 0, 0, .90, 0, 0, 0,.16;
+		///r << .09, 0, 0, 0, .90, 0, 0, 0,.16;
 	    //q << 0.00001, 0, 0, 0, 0.0001, 0, 0, 0, 0.0001;
-	    q << 0.01,0,0,0,0.01,0,0,0,0.01; //, 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
+	    //q << 0.01,0,0,0,0.01,0,0,0,0.01; //, 0, 0,0, pow(stddev_distance,2), 0, 0, 0, pow(stddev_theta,2);
 		p << 0,0,0,0,0,0,0,0,0;
 		std::cout << "El odom antes: " <<  robot_odom_1.pose.pose.orientation  << "\n";
-		x_ << robot_odom_1.pose.pose.position.x ,robot_odom_1.pose.pose.position.y, getYawFromQuaternion(robot_odom_1.pose.pose.orientation);
+		x_ << initial_x ,initial_y, initial_a;
 		//if(x_(2) > M_PI) x_(2) -= 2 * M_PI;
 		//if(x_(2) < M_PI) x_(2) += 2 * M_PI;
 		x_(2) = normalize(x_(2));
-		
-		
 
 	}
 
@@ -263,19 +217,6 @@ bool ekf ()
 		if(debug)std::cout << "Fin prediccion x: \n" << x_ << "\n ------\n";
 		if(debug)std::cout << "Fin prediccion p: \n" << p << "\n ------\n";
 
-		/*
-		theta_track += req.theta;
-		position_ideal.push_back(Vector2d( position_ideal.back()(0) + req.distance * cos(theta_track) ,position_ideal.back()(1) + req.distance * sin(theta_track) ) );
-		*/
-
-
-/*
-		return true;
-	}	
-	else // Actualizacion
-	{
-		swi = 0;
-	*/
 
 
 		UPDATE_LANDMARKS_FLAG = false;
@@ -286,12 +227,11 @@ bool ekf ()
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
 			
-			std::cout << "landmarks_detected[i].id :" << landmarks_detected[i].id << " landmarks_on_map[id_index].id :" << landmarks_on_map[id_index].id;
+			std::cout << "landmarks_detected[i].id : " << landmarks_detected[i].id << " \n landmarks_on_map[id_index].id :" << landmarks_on_map[id_index].id << "\n";
 
+			if(debug)std::cout << "landmarks_on_map[id_index].point.x  : \n" << landmarks_on_map[id_index].point.x << " \n y landmarks_on_map[id_index].point.y: " << landmarks_on_map[id_index].point.y << "\n";
 
-			if(debug)std::cout << "Centroide x sensor : \n" << landmarks_on_map[id_index].point.x << " , y Sensor: " << landmarks_on_map[id_index].point.y ;
-
-			if(debug)std::cout << "landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << " , landmarks_detected[i].point.y: " << landmarks_detected[i].point.y ;
+			if(debug)std::cout << "landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << " , landmarks_detected[i].point.y: " << landmarks_detected[i].point.y << "\n" ;
 
 			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; // The real measurement
 			
@@ -355,7 +295,6 @@ bool ekf ()
 		x_(2) = normalize(x_(2));
 
 		
-		
 		localizatio_pose.pose.position.x = x_(0);
 		localizatio_pose.pose.position.y = x_(1);
 		localizatio_pose.pose.position.z = 0;
@@ -373,6 +312,7 @@ bool ekf ()
 		localizatio_pose.covariance[35] = p(2,2);
 
 		pose_pub.publish(localizatio_pose);
+		
 		if(debug)std::cout << "Prediccion Final: \n" << x_ << "\n ------\n";
 
 		return true;
@@ -422,112 +362,318 @@ int main(int argc, char *argv[])
 {
 	ros::init(argc, argv, "Nodo_ekf");
 	ros::NodeHandle nh;
-  	ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 0, LandmarksPointCallBack);
+	ros::Rate rate(10);
+  	
+	/*
+		Topicos de entrada de informacion
+
+		landmarksPoint -> Recibe las cordenadas de los puntos (landmarks) asi como su Id
+		odom -> La odometria xD
+	*/
+	ros::Subscriber landmarks_sub = nh.subscribe ("landmarksPoint", 0, LandmarksPointCallBack);
   	ros::Subscriber odom_sub = nh.subscribe("odom", 0, odomCallback);
+	
+	/*
+		Publica la posicion estimada por el EKF  
+	*/
 	pose_pub = nh.advertise<geometry_msgs::PoseWithCovariance>("localization_ekf", 0);
 	
-	landmarks_on_map.clear();
-	Landmark aux;
+	/* 
+		Load parameters such as q_matrix, r_matrix, apha0,apha1,apha2,apha3
+	*/
+	XmlRpc::XmlRpcValue processMatrixConfig;
+	
+	q.setZero();
+	if(ros::param::has("~q_matrix"))
+    {
+      try
+      {
+        ros::param::get("~q_matrix", processMatrixConfig);
 
-	std::string path2pack = ros::package::getPath("kalman_loc_qr");
-    std::ifstream infile(path2pack+"/data/landmarks_"+"casakmuybueno"+".txt");
-	int id;
-	double x,y,z;
+        ROS_ASSERT(processMatrixConfig.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
-	localizatio_pose.pose.position.x = 0 ;
-	localizatio_pose.pose.position.y = 0 ;
-	localizatio_pose.pose.position.z = 0;
+        int matSize = q.rows();
 
-	localizatio_pose.pose.orientation.x = 0;
-	localizatio_pose.pose.orientation.y = 0;
-	localizatio_pose.pose.orientation.z = 0 ;
-	localizatio_pose.pose.orientation.w = 1 ;
+        for (int i = 0; i < matSize; i++)
+        {
+          for (int j = 0; j < matSize; j++)
+          {
+            try
+            {
+              // These matrices can cause problems if all the types
+              // aren't specified with decimal points. Handle that
+              // using string streams.
+              std::ostringstream ostr;
+              ostr << processMatrixConfig[matSize * i + j];
+              std::istringstream istr(ostr.str());
+              istr >> q(i, j);
+            }
+            catch(XmlRpc::XmlRpcException &e)
+            {
+              throw e;
+            }
+            catch(...)
+            {
+              throw;
+            }
+          }
+        }
 
+        std::cout << "Q matrix: \n" << q << "\n";
+      }
+      catch (XmlRpc::XmlRpcException &e)
+      {
+        ROS_ERROR_STREAM("ERROR reading q_matrix");
+      }
 
-	localizatio_pose.covariance[0] = p(0,0);
-	localizatio_pose.covariance[1] = p(0,1);
-	localizatio_pose.covariance[5] = p(0,2);
-	localizatio_pose.covariance[6] = p(1,0);
-	localizatio_pose.covariance[7] = p(1,1);
-	localizatio_pose.covariance[11] = p(1,2);
-	localizatio_pose.covariance[30] = p(2,0);
-	localizatio_pose.covariance[31] = p(2,1);
-	localizatio_pose.covariance[35] = p(2,2);
-
-	while (infile >> id >> x >> y >> z)
-    {   
-		ROS_INFO("Id: %d",id );
-        aux.point.x = x;
-        aux.point.y = y;
-        aux.point.z = z;
-		aux.id = id;
-        landmarks_on_map.push_back(aux);
     }
 
-	ros::Rate rate(10);
+	r.setZero();
+	if(ros::param::has("~r_matrix"))
+    {
+      try
+      {
+        ros::param::get("~r_matrix", processMatrixConfig);
+
+        ROS_ASSERT(processMatrixConfig.getType() == XmlRpc::XmlRpcValue::TypeArray);
+
+        int matSize = r.rows();
+
+        for (int i = 0; i < matSize; i++)
+        {
+          for (int j = 0; j < matSize; j++)
+          {
+            try
+            {
+              // These matrices can cause problems if all the types
+              // aren't specified with decimal points. Handle that
+              // using string streams.
+              std::ostringstream ostr;
+              ostr << processMatrixConfig[matSize * i + j];
+              std::istringstream istr(ostr.str());
+              istr >> r(i, j);
+            }
+            catch(XmlRpc::XmlRpcException &e)
+            {
+              throw e;
+            }
+            catch(...)
+            {
+              throw;
+            }
+          }
+        }
+
+        std::cout << "R matrix: \n" << r << "\n";
+      }
+      catch (XmlRpc::XmlRpcException &e)
+      {
+        ROS_ERROR_STREAM("ERROR reading q_matrix");
+      }
+
+    }
+
+	for(int i = 0; i < 4; i++)
+	{
+		if(ros::param::has("~alpha" + std::to_string(i+1)) )
+		{
+			ros::param::get("~alpha" + std::to_string(i+1), ALPHA[i] );
+			
+			if( isnan(ALPHA[i])  )
+			{
+				ROS_ERROR("Invalid dist_update");
+				return 0;
+			}
+			else
+			{
+				ROS_INFO("Alpha %d: %f",i+1,ALPHA[i]);
+			}
+			
+		}
+		else
+		{
+			ALPHA[i] = 0.2;
+			ROS_INFO("Default ~alpha%d: %f ", i+1 , ALPHA[i]);
+			
+		}
+	}
+	
+
+	/*
+		Load map of landmarks
+	*/
+	int id;
+	double x,y,z;
+	Landmark aux;
+	landmarks_on_map.clear();
+	std::string path_land_map;
+	if(ros::param::has("~path_land_map"))
+	{
+		ros::param::get("~path_land_map", path_land_map );
+		
+		std::ifstream infile(path_land_map);
+		if( infile.is_open() )
+		{	
+			std::cout << "Landmarks in (" << path_land_map << ") map file : "  << std::endl;
+			while (infile >> id >> x >> y >> z)
+			{   
+				ROS_INFO("Id: %d",id );
+				aux.point.x = x;
+				aux.point.y = y;
+				aux.point.z = z;
+				aux.id = id;
+				landmarks_on_map.push_back(aux);
+			}
+		}
+		else
+		{
+			ROS_ERROR("The path_land_map is invalid U_U");
+			return 0;
+		}
+	}
+	else
+	{
+		std::cout << "Sorry U_U give a path_land_map. Try: _path_land_map:=landmark_map.txt "  << std::endl;
+		return 0;
+	}
+
+	/*
+		Initial Pose
+	*/
+
+
+	if( ros::param::has("~initial_x") ){
+		ros::param::get("~initial_x",initial_x);
+		ROS_ASSERT_MSG( !isnan(initial_x) , "Invalid initial_x: %f ", initial_x);
+		ROS_INFO("initial_x: %f",initial_x);	
+	}else
+		ROS_INFO("Default initial_x: %f ",initial_x);
+
+	if( ros::param::has("~initial_y") ){
+		ros::param::get("~initial_y",initial_y);
+		ROS_ASSERT_MSG( !isnan(initial_y) , "Invalid initial_y: %f ", initial_y);
+		ROS_INFO("initial_y: %f",initial_y);	
+	}else
+		ROS_INFO("Default initial_y: %f ",initial_y);
+
+	if( ros::param::has("~initial_a") ){
+		ros::param::get("~initial_a",initial_a);
+		ROS_ASSERT_MSG( !isnan(initial_a) , "Invalid initial_a: %f ", initial_a);
+		ROS_INFO("initial_a: %f",initial_a);	
+	}else
+		ROS_INFO("Default initial_a: %f ",initial_a);
+	
+	localizatio_pose.pose.position.x = initial_x;
+	localizatio_pose.pose.position.y = initial_y;
+	localizatio_pose.pose.position.z = 0;
+
+	localizatio_pose.pose.orientation = tf::createQuaternionMsgFromYaw(initial_a);
+
+	localizatio_pose.covariance[0] = 0;
+	localizatio_pose.covariance[1] = 0;
+	localizatio_pose.covariance[5] = 0;
+	localizatio_pose.covariance[6] = 0;
+	localizatio_pose.covariance[7] = 0;
+	localizatio_pose.covariance[11] = 0;
+	localizatio_pose.covariance[30] = 0;
+	localizatio_pose.covariance[31] = 0;
+	localizatio_pose.covariance[35] = 0;
+
+	pose_pub.publish(localizatio_pose);
+
+
+	/*
+		Variables for ekf trigger
+	*/
+
+	double dist_update;
+	double angle_update; 
+
+	if(ros::param::has("~dist_update"))
+	{
+		ros::param::get("~dist_update", dist_update );
+		ROS_ASSERT_MSG( !isnan(dist_update), "Invalid dist_update: %f ", dist_update);
+		ROS_INFO("dist_update: %f", dist_update);
+
+	}
+	else
+	{
+		dist_update = 0.5;
+		ROS_INFO("Using DEFAULT dist_update:  %f ",dist_update);
+	}
+
+	if(ros::param::has("~angle_update"))
+	{
+		ros::param::get("~angle_update", angle_update);
+		
+		if( isnan(angle_update) )
+		{
+			ROS_ERROR("Invalid angle_update");
+			return 0;
+		}
+		else
+		{
+			ROS_INFO("angle_update: %f", angle_update);
+		}
+		
+	}
+	else
+	{
+		angle_update = 0.03490658503;// 2grados
+		ROS_INFO("Using DEFAULT angle_update:  %f ",angle_update);
+	}
+
+	/*
+		Get base_link to device (kinect/stereocam) trasformation
+	*/
 
 	tf2_ros::Buffer tfBuffer;
   	tf2_ros::TransformListener tfListener(tfBuffer);
-
 	
-	while (nh.ok()){
-		
+	while (nh.ok())
+	{	
 		try{
-		TRANSFORM_STAMPED_BASE_2_DEVICE = tfBuffer.lookupTransform( "base_link","kinect_link",
-								ros::Time(0));
-		ROS_INFO("TF_base_to_device: \n X: %f \n Y: %f \n Z: %f \n -----\n ",TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.x,
-																			TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.y,
-																			TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.z);	
+			TRANSFORM_STAMPED_BASE_2_DEVICE = tfBuffer.lookupTransform( "base_link","kinect_link",
+									ros::Time(0));
+			ROS_INFO("TF_base_to_device: \n X: %f \n Y: %f \n Z: %f \n -----\n ",TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.x,
+																				TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.y,
+																				TRANSFORM_STAMPED_BASE_2_DEVICE.transform.translation.z);	
 		break;
-
 		}
-		catch (tf2::TransformException &ex) {
-		ROS_WARN("%s",ex.what());
-		ros::Duration(1.0).sleep();
-		continue;
+		catch (tf2::TransformException &ex) 
+		{
+			ROS_WARN("%s",ex.what());
+			ros::Duration(1.0).sleep();
+			continue;
 		}    
 		rate.sleep();
 	}
 
-
+	/* 
+		Waiting for  odom info
+	*/
+	std::cout << "Esperando odom topic...\n";
 	while(odom_sub.getNumPublishers() == 0 || robot_odom.pose.pose.orientation.w == 0)
 	{
-		std::cout << "Esperando \n";
-		rate.sleep();
+		ros::Duration(1.0).sleep();
 		ros::spinOnce();
 	};
-	
 	robot_odom_1 = robot_odom;
-	std::cout << "El odomsoso: " <<  robot_odom.pose.pose.orientation  << "\n";
+	//std::cout << "El odomsoso: " <<  robot_odom.pose.pose.orientation  << "\n";
 	
-	//double roll_1, pitch_1, yaw_1;
-	//tf::Matrix3x3 mtx_rot_1(robot_odom_1.pose.orientation);
-	//mtx_rot_1.getRPY(roll_1, pitch_1, yaw)_1;
+
 
 	double roll,pitch,yaw;
-
-	//tf::Matrix3x3 mtx_rot;
-	
 	tf2::Quaternion quat_tf_1, quat_tf,quat_r;
 	
-	double min_dist_update = .5;
-
-	double min_angle_update = 0.03490658503;// 2grados
+	std::cout << "Waiting for robot's movements\n";
 	while(ros::ok())
 	{
-		//std::cout << "odom_1 x" << robot_odom_1.pose.pose.orientation.x  << " \n";
-		//std::cout << "odom_1 y" << robot_odom_1.pose.pose.orientation.y  << " \n";
-		//std::cout << "odom_1 z" << robot_odom_1.pose.pose.orientation.z  << " \n";
-		//std::cout << "odom_1 w" << robot_odom_1.pose.pose.orientation.w  << " \n";	
-
-
-		//std::cout << "q-1" << quat_tf_1.x() <<" : "<< quat_tf_1.y() <<" : " << quat_tf_1.z() <<" : " << quat_tf_1.w() <<" \n";
-		//std::cout << "q" << quat_tf.x() <<" : "<< quat_tf.y() <<" : " << quat_tf.z() <<" : " << quat_tf.w() <<" \n"; 
-			//ROS_INFO("SUBS: %d",odom_sub.getNumPublishers()); 	
-
+		/*
+			Get euler from quaternion to compare
+		*/
 		tf2::fromMsg(robot_odom_1.pose.pose.orientation, quat_tf_1);
 		tf2::fromMsg(robot_odom.pose.pose.orientation, quat_tf);
-
 
 		quat_tf_1[3] = -quat_tf_1[3];
 		quat_r=quat_tf*quat_tf_1 ;
@@ -535,24 +681,18 @@ int main(int argc, char *argv[])
 		tf2::Matrix3x3 mtx_rot( quat_r );
 		mtx_rot.getRPY(roll, pitch, yaw);
 
-		
+		/*
+			Se revisa si el avance es mayor a min_dist_update o si el giro es mayor a min_angle_update
+			si se cumple alguna de las 2 condiciones se ejecuta el algoritmo EKF
+		*/
 
     	if( 
-			( sqrt(pow(robot_odom_1.pose.pose.position.x - robot_odom.pose.pose.position.x,2) + pow(robot_odom_1.pose.pose.position.y - robot_odom.pose.pose.position.y,2)) > min_dist_update )
-			 
-			)
+			( sqrt(pow(robot_odom_1.pose.pose.position.x - robot_odom.pose.pose.position.x,2) + pow(robot_odom_1.pose.pose.position.y - robot_odom.pose.pose.position.y,2)) > dist_update )
+			||
+			( fabs(yaw) > angle_update )
+		)
 		{
-			
-			ROS_INFO("Actualizacion position");
-			ekf();
-			robot_odom_1 = robot_odom;
-			
-			
-		}
-		else if (( fabs(yaw) > min_angle_update ))
-		{
-			ROS_INFO("Actualizacion orientation");
-			
+			ROS_INFO("EKF running");
 			ekf();
 			robot_odom_1 = robot_odom;
 		}

@@ -234,3 +234,6 @@ target_link_libraries(odom_readable ${catkin_LIBRARIES})
 
 add_executable(pruebas src/pruebas.cpp)
 target_link_libraries(pruebas ${catkin_LIBRARIES})
+
+add_executable(uncertanty_blob src/uncertanty_blob.cpp)
+target_link_libraries(uncertanty_blob ${catkin_LIBRARIES})

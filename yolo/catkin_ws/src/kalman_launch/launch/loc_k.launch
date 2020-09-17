@@ -6,11 +6,18 @@
 
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
-    <node name="ekf" pkg="kalman_loc_qr" type="ekf" output="screen">			
+    
+
+    <node name="ekf" pkg="kalman_loc_qr" type="ekf" output="screen">
+        <rosparam command="load" file="$(find kalman_loc_qr)/params/ekf_config_k.yaml" />			
 	</node>
 
-	<node name="tf_map_odom" pkg="kalman_loc_qr" type="tf_map_odom" output="screen" >
+    <node name="tf_map_odom" pkg="kalman_loc_qr" type="tf_map_odom" output="screen" >
     </node>
+	
+
+    <node name="landmarks_found" pkg="kalman_loc_qr" type="landmarks_found" output="screen">			
+	</node>
 
 </launch>
 

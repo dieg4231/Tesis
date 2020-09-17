@@ -67,29 +67,18 @@ int main(int argc, char *argv[])
     tf2_ros::TransformBroadcaster tf_br_;
 
     tf_map_to_odom_.transform.translation.x =0;
-tf_map_to_odom_.transform.translation.y =0;
-tf_map_to_odom_.transform.translation.z = 0;
+    tf_map_to_odom_.transform.translation.y =0;
+    tf_map_to_odom_.transform.translation.z = 0;
     
 
 
 
 
 
-tf_map_to_odom_.transform.rotation.x = 0;
+    tf_map_to_odom_.transform.rotation.x = 0;
     tf_map_to_odom_.transform.rotation.y = 0;
     tf_map_to_odom_.transform.rotation.z = 0;
     tf_map_to_odom_.transform.rotation.w = 1;
-
-
-
-
-
-
-
-
-
-
-
 
 
 

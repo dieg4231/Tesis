@@ -19,5 +19,8 @@
     <node name="landmarks_found" pkg="kalman_loc_qr" type="landmarks_found" output="screen">			
 	</node>
 
+    <node name="uncertanty_blob" pkg="kalman_loc_qr" type="uncertanty_blob" output="screen">			
+	</node>
+
 </launch>
 

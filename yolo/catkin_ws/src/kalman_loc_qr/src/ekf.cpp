@@ -227,33 +227,35 @@ bool ekf ()
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
 			
-			std::cout << "landmarks_detected[i].id : " << landmarks_detected[i].id << " \n landmarks_on_map[id_index].id :" << landmarks_on_map[id_index].id << "\n";
-
-			if(debug)std::cout << "landmarks_on_map[id_index].point.x  : \n" << landmarks_on_map[id_index].point.x << " \n y landmarks_on_map[id_index].point.y: " << landmarks_on_map[id_index].point.y << "\n";
-
-			if(debug)std::cout << "landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << " , landmarks_detected[i].point.y: " << landmarks_detected[i].point.y << "\n" ;
-
-			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; // The real measurement
+			if(debug)std::cout << "Landmarks_detected[i].id : " << landmarks_detected[i].id << std::endl;
+			if(debug)std::cout << "Landmarks_on_map[id_index].id : " << landmarks_on_map[id_index].id << std::endl;
+			if(debug)std::cout << "Landmarks_on_map[id_index].point.x : " << landmarks_on_map[id_index].point.x << std::endl;
+			if(debug)std::cout << "Landmarks_on_map[id_index].point.y : " << landmarks_on_map[id_index].point.y << std::endl;
+			if(debug)std::cout << "Landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << std::endl;
+			if(debug)std::cout << "Landmarks_detected[i].point.y : " << landmarks_detected[i].point.y << std::endl;
 			
-			if(debug)std::cout << "z_i_t: \n" << z_i_t << "\n ------\n";
+			// The real measurement
+			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; 
+			
+			if(debug)std::cout << "z_i_t (Mesurment): \n------\n" << z_i_t << "\n ------" << std::endl;
 			
 			// Calculo de las lecturas esperadas respecto a la posicion del robot obtenida en el paso de prediccion
 				
-				dist = pow( landmarks_on_map[id_index].point.x - x_(0),2 ) + pow( landmarks_on_map[id_index].point.y - x_(1) ,2); // Radicando de la de la distancia entre un landmark y el robot 
+			dist = pow( landmarks_on_map[id_index].point.x - x_(0),2 ) + pow( landmarks_on_map[id_index].point.y - x_(1) ,2); // Radicando de la de la distancia entre un landmark y el robot 
 
-				// Angulo del landmark respecto al robot
-				angle_z_i_t_hat  = atan2(landmarks_on_map[id_index].point.y - x_(1), landmarks_on_map[id_index].point.x - x_(0)) - x_(2);
+			// Angulo del landmark respecto al robot
+			angle_z_i_t_hat  = atan2(landmarks_on_map[id_index].point.y - x_(1), landmarks_on_map[id_index].point.x - x_(0)) - x_(2);
 			
-				// Validacion para que el angulo obtenido siempre este entre pi y -pi
-				if (angle_z_i_t_hat > M_PI)
-					angle_z_i_t_hat -= 2*M_PI;
-				if (angle_z_i_t_hat < -M_PI)
-					angle_z_i_t_hat += 2*M_PI;
+			// Validacion para que el angulo obtenido siempre este entre pi y -pi
+			if (angle_z_i_t_hat > M_PI)
+				angle_z_i_t_hat -= 2*M_PI;
+			if (angle_z_i_t_hat < -M_PI)
+				angle_z_i_t_hat += 2*M_PI;
 
-				// Vector de lecturas esperadas
-				z_i_t_hat  << sqrt(dist), angle_z_i_t_hat, 0 ;
+			// Vector de lecturas esperadas
+			z_i_t_hat  << sqrt(dist), angle_z_i_t_hat, 0 ;
 
-				if(debug)std::cout << "z_i_t_hat: \n" << z_i_t_hat << "\n ------\n";
+			if(debug)std::cout << "z_i_t_hat (Esperadas): \n------\n" << z_i_t_hat << "\n ------" << std::endl;
 			
 			// fin calculo de lecturas esperadas
 			

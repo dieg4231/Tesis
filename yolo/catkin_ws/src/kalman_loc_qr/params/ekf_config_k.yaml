@@ -6,19 +6,19 @@ initial_a: 0
 
 
 # Path to  landmarks map file
-path_land_map: /home/diego/kk/Tesis/yolo/catkin_ws/src/kalman_loc_qr/data/landmarks_casakmuybueno.txt
+path_land_map: /home/diego/kk/Tesis/yolo/catkin_ws/src/kalman_loc_qr/data/landmarks_f10.txt
 
 # Distance (in meters) to run EKF algorithm 
-dist_update: 0.1
+dist_update: 0.2
 
 # Angle (in radians) to run EKF algorithm
-angle_update: 0.3490658503
+angle_update: 0.523598776
 
 # Alpha parameters for sample_motion_model_odometry
-alpha1: 0.01
+alpha1: 0.02
 alpha2: 0.02
-alpha3: 0.03
-alpha4: 0.04
+alpha3: 0.02
+alpha4: 0.02
 
 # Mtrix Q for prediction step
 q_matrix: [0.0009, 0,    0,    
@@ -26,9 +26,9 @@ q_matrix: [0.0009, 0,    0,
            0,    0,    0.03046176808 ]
 
 # Mtrix Q for update step
-r_matrix: [0.0001, 0,      0,    
-           0,      0.0001, 0,    
-           0,      0,      0.0001 ]
+r_matrix: [0.001, 0,      0,    
+           0,      0.001, 0,    
+           0,      0,      0.0000001 ]
 
 
 

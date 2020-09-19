@@ -104,7 +104,7 @@ save_map(kalman_loc_qr::SaveQRMap::Request &req,
   std::string path2pack = ros::package::getPath("kalman_loc_qr");
   std::ofstream myfile;
   myfile.open ( req.fileName+".txt");
-  std::cout << "Writing to: \n" << path2pack+"/data/landmarks_"+req.fileName+".txt \n";
+  std::cout << "Writing to: \n ROS_HOME/" << req.fileName+".txt \n";
   
   for(int i = 0; i < ids_acumulado.size(); i++) // Todos los ids recibidos
   {

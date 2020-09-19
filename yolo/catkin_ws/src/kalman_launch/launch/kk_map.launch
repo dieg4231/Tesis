@@ -63,9 +63,9 @@
 				<param name="initial_cov_aa" value="0.1"/ -->
 		</node>
 
-		<node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
+		<!--node name="aruco_mapping" pkg="kalman_loc_qr" type="aruco_mapping" output="screen" >
         	<param name="max_dist" value="3.0"/>
-    	</node>
+    	</node-->
 
 </launch>
 

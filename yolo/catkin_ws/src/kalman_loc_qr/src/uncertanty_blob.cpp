@@ -54,7 +54,7 @@ void localizationEkfCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& 
     blob.pose.position.y = data->pose.position.y;
     blob.pose.position.z = 1.0;
     
-    blob.color.a = 1.0; // Don't forget to set the alpha!
+    blob.color.a = 0.5; // Don't forget to set the alpha!
     blob.color.r = 1.0;
     blob.color.g = 0.8;
     blob.color.b = 0.0;

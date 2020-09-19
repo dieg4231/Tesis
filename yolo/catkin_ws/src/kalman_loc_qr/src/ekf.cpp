@@ -198,13 +198,13 @@ bool ekf ()
 
 	 // Prediction step
 	
-		if(debug)std::cout << "Inicio: \n" << x_ << "\n ------\n";
+		if(debug)std::cout << "Inicio prediccion: \n" << x_ << "\n ------\n";
 	    
 
 		sample_motion_model_odometry(x_, &translation, &theta_plus_rotation1 );
 		
 
-		if(debug)std::cout << "despues: \n" << x_ << "\n ------\n";
+		if(debug)std::cout << "X: \n" << x_ << "\n ------\n";
 		/*
 		theta = x_(2) + req.theta;
 		x_(0) = x_(0) + req.distance * cos(theta) ;
@@ -213,7 +213,12 @@ bool ekf ()
 	    */
 
 	    vf <<  	1, 0, -translation * sin(theta_plus_rotation1), 0, 1,  translation * cos(theta_plus_rotation1), 0, 0,  1;
+
+
+
+		if(debug)std::cout << "vf: \n" << vf << "\n ------" << std::endl;		
 		p = vf * p * vf.transpose() + q;
+		if(debug)std::cout << "q: \n" << q << "\n ------\n";
 		if(debug)std::cout << "Fin prediccion x: \n" << x_ << "\n ------\n";
 		if(debug)std::cout << "Fin prediccion p: \n" << p << "\n ------\n";
 
@@ -227,17 +232,21 @@ bool ekf ()
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
 			
-			if(debug)std::cout << "Landmarks_detected[i].id : " << landmarks_detected[i].id << std::endl;
-			if(debug)std::cout << "Landmarks_on_map[id_index].id : " << landmarks_on_map[id_index].id << std::endl;
-			if(debug)std::cout << "Landmarks_on_map[id_index].point.x : " << landmarks_on_map[id_index].point.x << std::endl;
-			if(debug)std::cout << "Landmarks_on_map[id_index].point.y : " << landmarks_on_map[id_index].point.y << std::endl;
-			if(debug)std::cout << "Landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << std::endl;
-			if(debug)std::cout << "Landmarks_detected[i].point.y : " << landmarks_detected[i].point.y << std::endl;
+			if(debug)std::cout << "		Landmarks_detected[i].id : " << landmarks_detected[i].id << std::endl;
+			if(debug)std::cout << "		Landmarks_on_map[id_index].id : " << landmarks_on_map[id_index].id << std::endl;
+			if(debug)std::cout << "		Landmarks_on_map[id_index].point.x : " << landmarks_on_map[id_index].point.x << std::endl;
+			if(debug)std::cout << "		Landmarks_on_map[id_index].point.y : " << landmarks_on_map[id_index].point.y << std::endl;
+			if(debug)std::cout << "		Distancia x esperada : " << landmarks_on_map[id_index].point.x - x_(0) << std::endl;
+			if(debug)std::cout << "		Distancia y esperada : " << landmarks_on_map[id_index].point.y - x_(1) << std::endl;
+			if(debug)std::cout << "		Landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << std::endl;
+			if(debug)std::cout << "		Landmarks_detected[i].point.y : " << landmarks_detected[i].point.y << std::endl;
+			if(debug)std::cout << "		Error en x : " << landmarks_detected[i].point.x - landmarks_on_map[id_index].point.x - x_(0)<< std::endl;
+			if(debug)std::cout << "		Error en y : " << landmarks_detected[i].point.y - landmarks_on_map[id_index].point.y - x_(1)<< std::endl;
 			
 			// The real measurement
 			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; 
 			
-			if(debug)std::cout << "z_i_t (Mesurment): \n------\n" << z_i_t << "\n ------" << std::endl;
+			if(debug)std::cout << "		z_i_t (Mesurment): \n" << z_i_t << "\n ------" << std::endl;
 			
 			// Calculo de las lecturas esperadas respecto a la posicion del robot obtenida en el paso de prediccion
 				
@@ -255,7 +264,9 @@ bool ekf ()
 			// Vector de lecturas esperadas
 			z_i_t_hat  << sqrt(dist), angle_z_i_t_hat, 0 ;
 
-			if(debug)std::cout << "z_i_t_hat (Esperadas): \n------\n" << z_i_t_hat << "\n ------" << std::endl;
+			if(debug)std::cout << "		z_i_t_hat (Esperadas): \n" << z_i_t_hat << "\n ------" << std::endl;
+
+			if(debug)std::cout << "		Error z_i_t_hat (Esperadas) - z_i_t(measurmet): \n" << z_i_t_hat  -  z_i_t << "\n ------" << std::endl;
 			
 			// fin calculo de lecturas esperadas
 			
@@ -264,27 +275,28 @@ bool ekf ()
 			 	  ( landmarks_on_map[id_index].point.y - x_(1) ) / dist, -( landmarks_on_map[id_index].point.x - x_(0) ) / dist,-1,
 			 	  0,0,0; // this row is zero por que  la etiqueta del landmark no depende de la posicion del robot
 			
-			if(debug)std::cout << "H: \n" << H << "\n ------\n";
+			if(debug)std::cout << "		H: \n" << H << "\n ------\n";
+			if(debug)std::cout << "		r: \n" << r << "\n ------\n";
 			
 			s = ( H * p * H.transpose() ) + r; // S xD
 			
-			if(debug)std::cout << "S: \n" << s << "\n ------\n";
+			if(debug)std::cout << "		S: \n" << s << "\n ------\n";
 
 			k = p * H.transpose() * s.inverse(); // Ganancia de kalman
 			
-			if(debug)std::cout << "K: \n"<<  k << "\n ------\n";
+			if(debug)std::cout << "		K: \n"<<  k << "\n ------\n";
 
 			v = z_i_t - z_i_t_hat;  // original menos lo esperadp_
 			
-			if(debug)std::cout << "V: \n"<< v << "\n ------\n";
+			if(debug)std::cout << "		V: \n"<< v << "\n ------\n";
 			
 			x_ = x_ + (k*v); // Actualizacion vector de estado
 			
-			if(debug)std::cout << "X: \n" << x_ << "\n ------\n";
+			if(debug)std::cout << "		X: \n" << x_ << "\n ------\n";
 			
 			p = ( I - k * H ) * p; // Actualizacion matriz de covarianza
 			
-			if(debug)std::cout << "P: \n" << p << "\n ------\n";
+			if(debug)std::cout << "		P: \n" << p << "\n ------\n";
 
 		}
 		UPDATE_LANDMARKS_FLAG = true;
@@ -315,7 +327,9 @@ bool ekf ()
 
 		pose_pub.publish(localizatio_pose);
 		
-		if(debug)std::cout << "Prediccion Final: \n" << x_ << "\n ------\n";
+		if(debug)std::cout << "actualizacion Final x: \n" << x_ << "\n ------\n";
+		if(debug)std::cout << "actualizacion Final p: \n" << p << "\n ------\n";
+		if(debug)std::cout << "Final -----\n";
 
 		return true;
 	

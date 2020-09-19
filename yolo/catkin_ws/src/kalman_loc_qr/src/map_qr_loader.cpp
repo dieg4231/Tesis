@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     return 0;
   }
     std::string path2pack = ros::package::getPath("kalman_loc_qr");
-    std::ifstream infile(path2pack+"/data/landmarks_"+mapfile+".txt");
+    std::ifstream infile(mapfile);
 
     double x,y,z;
     int id;

@@ -23,12 +23,15 @@
 #include <ros/package.h>
 #include <tf/transform_listener.h>
 
+#include <std_srvs/SetBool.h>
+
 double max_dist = 100;
 std::string max_dist_string;
 std::string::size_type sz;     // alias of size_t
 
 std::vector<std::vector<geometry_msgs::PointStamped>> points_acumulado;
 std::vector<int> ids_acumulado;
+bool START_STOP = false;
 
 geometry_msgs::PointStamped from_device2map(geometry_msgs::PointStamped device)
 {
@@ -67,31 +70,35 @@ void
 add_points (const kalman_loc_qr::LandmarksConstPtr& msg)
 { 
   
-  for(int i = 0; i < msg->ids.size(); i++) // Todos los ids recibidos
-  { 
-    if( distance2landmak( msg->pointLandmarks[i] ) > max_dist )
-        continue;
+  if(START_STOP)
+  {
+      for(int i = 0; i < msg->ids.size(); i++) // Todos los ids recibidos
+      { 
+        if( distance2landmak( msg->pointLandmarks[i] ) > max_dist )
+            continue;
 
 
-    std::vector<int>::iterator it =  std::find(ids_acumulado.begin(), ids_acumulado.end(), msg->ids[i]);
-    if( it != ids_acumulado.end() ) //Si se encuentra el id i en la lista 
-    {   // se agregan sus puntos al acumulado
+        std::vector<int>::iterator it =  std::find(ids_acumulado.begin(), ids_acumulado.end(), msg->ids[i]);
+        if( it != ids_acumulado.end() ) //Si se encuentra el id i en la lista 
+        {   // se agregan sus puntos al acumulado
+            
+            int index = it - ids_acumulado.begin();
+          
+            points_acumulado[index].push_back( from_device2map( msg->pointLandmarks[i]) );
+        }
+        else  // se grega el nuevo id
+        {
+          ids_acumulado.push_back(msg->ids[i]);
+          std::vector<geometry_msgs::PointStamped> v_aux;
+          v_aux.push_back(from_device2map(msg->pointLandmarks[i]));
+          points_acumulado.push_back( v_aux );
+          std::cout << "nuevo: " << msg->ids[i] << " \n";  
+        }
         
-        int index = it - ids_acumulado.begin();
-       
-        points_acumulado[index].push_back( from_device2map( msg->pointLandmarks[i]) );
-    }
-    else  // se grega el nuevo id
-    {
-      ids_acumulado.push_back(msg->ids[i]);
-      std::vector<geometry_msgs::PointStamped> v_aux;
-      v_aux.push_back(from_device2map(msg->pointLandmarks[i]));
-      points_acumulado.push_back( v_aux );
-      std::cout << "nuevo: " << msg->ids[i] << " \n";  
-    }
-    
+      }
   }
-    std::cout << "----------- \n";
+
+    
 }
 
 bool 
@@ -128,6 +135,26 @@ save_map(kalman_loc_qr::SaveQRMap::Request &req,
 }
 
 
+
+bool startStopMappingCallBack(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+{
+  if(START_STOP)
+  {
+    START_STOP = false;
+    res.success = true;
+    res.message = "Paused mapping";
+  }
+  else
+  {
+    START_STOP = true;
+    res.success = true;
+    res.message = "Started mapping";
+  }
+
+  return true;
+}
+
+
 int
 main (int argc, char** argv)
 {
@@ -154,7 +181,8 @@ main (int argc, char** argv)
   }
 
   ros::Subscriber landmarks_sub = nh.subscribe ("/landmarksPoint", 1, add_points);
-  ros::ServiceServer save_service = nh.advertiseService("get_qr_map", save_map);    
+  ros::ServiceServer save_service = nh.advertiseService("get_qr_map", save_map); 
+  ros::ServiceServer start_stop_service = nh.advertiseService("start_stop_mapping",startStopMappingCallBack);    
 
   ros::spin ();
 }

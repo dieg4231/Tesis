@@ -271,6 +271,7 @@ double distancia_recto = info.resolution;
 	
   path_pub.publish(path);
   std::cout << "fin"  << std::endl;
+
 }
 
 

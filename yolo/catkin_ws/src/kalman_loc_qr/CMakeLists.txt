@@ -241,3 +241,6 @@ target_link_libraries(pruebas ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(uncertanty_blob src/uncertanty_blob.cpp)
 target_link_libraries(uncertanty_blob ${catkin_LIBRARIES})
+
+add_executable(exec_path src/exec_path.cpp)
+target_link_libraries(exec_path ${catkin_LIBRARIES})

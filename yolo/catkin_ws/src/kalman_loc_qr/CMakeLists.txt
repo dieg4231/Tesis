@@ -232,8 +232,12 @@ target_link_libraries(tf_map_odom ${catkin_LIBRARIES})
 add_executable(odom_readable src/odom_readable.cpp)
 target_link_libraries(odom_readable ${catkin_LIBRARIES})
 
+
+find_package(OpenCV)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 add_executable(pruebas src/pruebas.cpp)
-target_link_libraries(pruebas ${catkin_LIBRARIES})
+target_link_libraries(pruebas ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(uncertanty_blob src/uncertanty_blob.cpp)
 target_link_libraries(uncertanty_blob ${catkin_LIBRARIES})

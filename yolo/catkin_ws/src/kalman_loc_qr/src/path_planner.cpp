@@ -11,9 +11,15 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <nav_msgs/Path.h>
+#include <geometry_msgs/TransformStamped.h>
+
+#include <tf2_ros/transform_listener.h>
 
 ros::Publisher map_pub;
 ros::Publisher path_pub;
+std_msgs::Header header ;
+nav_msgs::MapMetaData info ;
+geometry_msgs::TransformStamped TRANSFORM_STAMPED_MAP_2_BASE ;
 
 typedef struct _conection conection;
 typedef struct _nodo nodo;
@@ -52,6 +58,14 @@ void dijkstra_algorithm(int D ,int L)
 
       Video explicativo https://www.youtube.com/watch?v=LLx0QVMZVkk
    */
+
+    /*Clean variables*/
+    for (auto &ptr_nodo : nodes) // c++ 11
+    {
+      ptr_nodo.flag = 'N';
+      ptr_nodo.acumulado = 0;
+      ptr_nodo.parent = -1;
+    }
 
    int menor,flagOnce;
    int contador = 0;
@@ -118,8 +132,8 @@ void dijkstra_algorithm(int D ,int L)
 
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg){
   int step =1;
-  std_msgs::Header header = msg->header;
-  nav_msgs::MapMetaData info = msg->info;
+  header = msg->header;
+  info = msg->info;
   ROS_INFO("Got map %d %d", info.width, info.height);
 
   //matrix del tamaño del mapa y cada elemento es un char(byte con signo)
@@ -138,7 +152,7 @@ void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg){
   for (unsigned int x = 0; x < info.width; x+=step)
     for (unsigned int y = 0; y < info.height; y+=step)
       if(clone.at<char>(y,x) == 100)
-        circle(binary_map, cv::Point(x,y),4, 100,CV_FILLED, -1);
+        circle(binary_map, cv::Point(x,y),5, 100,CV_FILLED, -1);
   
   //Se le vuelve a aplicar la mascara de las celdas desconocidar para que los bordes del mapa no queden gorditos
   for (unsigned int x = 0; x < info.width; x+=step)
@@ -240,8 +254,49 @@ double distancia_recto = info.resolution;
         
     }
   */
-  int start = 800;
-  dijkstra_algorithm(5100 ,start);
+  
+
+}
+
+
+ int find_nearest_to(double x,double y)
+ {
+   double x_nodo;
+   double y_nodo;
+
+    double distancia;
+    double min_distancia = 1000;
+    int index;
+
+  for (int i = 0; i < nodes.size(); i++ ) // c++ 11
+  {
+      x_nodo = (nodes[i].x  * info.resolution) +  (   info.origin.position.x );
+      y_nodo = (nodes[i].y  * info.resolution) +  (   info.origin.position.y );
+      
+      distancia = sqrt(  pow(x - x_nodo,2) + pow(y - y_nodo,2)   );
+      if(distancia < min_distancia)
+      { 
+        min_distancia = distancia;
+        index = i;
+      }
+  }
+  return index;
+ }
+
+
+void goalCallback(const geometry_msgs::PoseStamped::Ptr& msgs)
+{
+  
+
+  //Find nearest node :D
+  std::cout << "fin"  << std::endl;
+  
+  int goal = find_nearest_to(msgs->pose.position.x,msgs->pose.position.y);
+
+  
+  int start = find_nearest_to(TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y);
+
+  dijkstra_algorithm(goal ,start);
 
 
   nav_msgs::Path path;
@@ -270,13 +325,9 @@ double distancia_recto = info.resolution;
   }
 	
   path_pub.publish(path);
-  std::cout << "fin"  << std::endl;
-
+  
+  std::cout << "Goal recived"  << std::endl;
 }
-
-
-
-
 
 
 
@@ -287,12 +338,41 @@ int main(int argc, char **argv){
 
 
 
-  ros::init(argc, argv, "grid");
+  ros::init(argc, argv, "path_planner");
   ros::NodeHandle n;
 
   map_pub = n.advertise<nav_msgs::OccupancyGrid>("map_out",10);
   path_pub = n.advertise<nav_msgs::Path>("path",10);
   ros::Subscriber map_sub = n.subscribe("map",10,mapCallback);
+  ros::Subscriber goal_sub = n.subscribe("/move_base_simple/goal",10,goalCallback);
+
+
+  /*
+		Get map to base_link trasformation
+	*/
+
+	tf2_ros::Buffer tfBuffer;
+  tf2_ros::TransformListener tfListener(tfBuffer);
+	
+  ros::Rate rate(10);
+	while (n.ok())
+	{	
+		try{
+			TRANSFORM_STAMPED_MAP_2_BASE = tfBuffer.lookupTransform( "map","base_link",
+									ros::Time(0));
+			//ROS_INFO("TF_base_to_device: \n X: %f \n Y: %f \n Z: %f \n -----\n ",TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,
+			//																	TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y,
+			//																	TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.z);	
+		}
+		catch (tf2::TransformException &ex) 
+		{
+			ROS_WARN("%s",ex.what());
+			ros::Duration(1.0).sleep();
+			continue;
+		}    
+    ros::spinOnce();
+		rate.sleep();
+	}
   
   ros::spin();
   return 0;

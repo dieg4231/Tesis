@@ -142,9 +142,9 @@ void sample_motion_model_odometry(Eigen::Vector3d &x_vector, double *theta_plus_
 	d_rot2 = normalize(normalize(theta_bar_p) - normalize(theta_bar + d_rot1)); //theta_bar_p - theta_bar - d_rot1;
 
 
-	d_rot1_hat =  d_rot1 ;//- pf_ran_gaussian( ALPHA[0] * pow(d_rot1,2) + ALPHA[1] * pow(d_trans1,2) );
-	d_trans1_hat = d_trans1 ;//- pf_ran_gaussian( ALPHA[2] * pow(d_trans1,2) + ALPHA[3] * pow(d_rot1,2) + ALPHA[3] * pow(d_rot2,2));
-	d_rot2_hat = d_rot2 ;//- pf_ran_gaussian(ALPHA[0] * pow(d_rot2,2) + ALPHA[1] * pow(d_trans1,2));
+	d_rot1_hat =  d_rot1 - pf_ran_gaussian( ALPHA[0] * pow(d_rot1,2) + ALPHA[1] * pow(d_trans1,2) );
+	d_trans1_hat = d_trans1 - pf_ran_gaussian( ALPHA[2] * pow(d_trans1,2) + ALPHA[3] * pow(d_rot1,2) + ALPHA[3] * pow(d_rot2,2));
+	d_rot2_hat = d_rot2 - pf_ran_gaussian(ALPHA[0] * pow(d_rot2,2) + ALPHA[1] * pow(d_trans1,2));
 
 
 	x_vector(0) = x_vector(0) + d_trans1_hat * cos( x_vector(2) + d_rot1_hat );

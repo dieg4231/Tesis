@@ -9,10 +9,10 @@ initial_a: 0
 path_land_map: /home/diego/kk/Tesis/yolo/catkin_ws/src/kalman_loc_qr/data/nuevobueno.txt
 
 # Distance (in meters) to run EKF algorithm 
-dist_update: 0.2
+dist_update: 0.05
 
 # Angle (in radians) to run EKF algorithm
-angle_update: 0.523598776
+angle_update: .2 #1.523598776
 
 # Alpha parameters for sample_motion_model_odometry
 alpha1: 0.02
@@ -23,7 +23,8 @@ alpha4: 0.02
 # Mtrix Q for prediction step
 q_matrix: [0.0009, 0,    0,    
            0,    0.0009, 0,    
-           0,    0,    0.03046176808 ]
+           0,    0,    0.0009046176808 ]
+#03046176808
 
 # Mtrix r for update step
 r_matrix: [0.001, 0,      0,    

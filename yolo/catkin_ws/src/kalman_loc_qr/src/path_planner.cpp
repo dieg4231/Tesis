@@ -14,6 +14,8 @@
 #include <geometry_msgs/TransformStamped.h>
 
 #include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/PoseWithCovariance.h>
+
 
 ros::Publisher map_pub;
 ros::Publisher path_pub;
@@ -284,19 +286,12 @@ double distancia_recto = info.resolution;
  }
 
 
-void goalCallback(const geometry_msgs::PoseStamped::Ptr& msgs)
+int goal;
+
+void pathCalculator(int start, int goal1)
 {
   
-
-  //Find nearest node :D
-  std::cout << "fin"  << std::endl;
-  
-  int goal = find_nearest_to(msgs->pose.position.x,msgs->pose.position.y);
-
-  
-  int start = find_nearest_to(TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y);
-
-  dijkstra_algorithm(goal ,start);
+  dijkstra_algorithm(goal1 ,start);
 
 
   nav_msgs::Path path;
@@ -329,8 +324,29 @@ void goalCallback(const geometry_msgs::PoseStamped::Ptr& msgs)
   std::cout << "Goal recived"  << std::endl;
 }
 
+void goalCallback(const geometry_msgs::PoseStamped::Ptr& msgs)
+{
+  
+  //Find nearest node :D
+
+  goal = find_nearest_to(msgs->pose.position.x,msgs->pose.position.y);
+
+  int start = find_nearest_to(TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y);
+  pathCalculator(start, goal);
+
+  std::cout << "Goal recived from  2D nav goal"  << std::endl;
+}
 
 
+void LocalizationEkfCallback(const geometry_msgs::PoseWithCovariance& msg)
+{
+
+  //Find nearest node :D
+  //int start = find_nearest_to(TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y);
+  //pathCalculator(start, goal);
+
+  //std::cout << "Goal recived from new localization"  << std::endl;
+}
 
 
 
@@ -345,8 +361,7 @@ int main(int argc, char **argv){
   path_pub = n.advertise<nav_msgs::Path>("path",10);
   ros::Subscriber map_sub = n.subscribe("map",10,mapCallback);
   ros::Subscriber goal_sub = n.subscribe("/move_base_simple/goal",10,goalCallback);
-
-
+  ros::Subscriber localization_ekf_sub = n.subscribe("localization_ekf", 0, LocalizationEkfCallback);
   /*
 		Get map to base_link trasformation
 	*/

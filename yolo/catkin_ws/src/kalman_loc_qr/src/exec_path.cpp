@@ -13,20 +13,15 @@
 nav_msgs::Path path;
 geometry_msgs::TransformStamped TRANSFORM_STAMPED_MAP_2_BASE ;
 
-bool active = true;
+int run_type = -1;
 
 
 void pathCallback(const nav_msgs::Path::ConstPtr& msg)
 {
     std::cout << "Recividooo " << std::endl;
-    if(active)
-    {
-        path = *msg;
-        active = false;
-    }
+    path = *msg;
+    run_type = 0;
 }
-
-
 
 
 double normalize(double z)
@@ -60,8 +55,8 @@ int main(int argc, char **argv)
 
   geometry_msgs::Twist vel_msg;
 
-
-  int index = 0;
+    int start_index  ;
+  int index = start_index = 3;
   double distance_to_path;
   
   tf2_ros::Buffer tfBuffer;
@@ -91,14 +86,34 @@ tf2_ros::TransformListener tfListener(tfBuffer);
         continue;
     }  
     //
-    if(!active)
+
+    
+
+    switch (run_type)
     {
-        if(path.poses.size() != index)
-        {
-            distance_to_path = sqrt(   pow(path.poses[index].pose.position.x - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,2) + pow(path.poses[index].pose.position.y - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y,2)    );
-            if(  distance_to_path > 0.1 )
+        case 0: //Reset
+            index = start_index;
+            vel_msg.angular.z = 0.0;
+            vel_msg.linear.x = 0.0;
+            run_type = 1;
+        break;
+
+        case 1: //running
+            distance_to_path = sqrt( pow(path.poses[index].pose.position.x - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x,2) + pow(path.poses[index].pose.position.y - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y,2)    );
+    
+            if(index == start_index )
+            {   
+                double angle_diff = normalize( atan2(path.poses[index].pose.position.y - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y,
+                                                path.poses[index].pose.position.x - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x) - getYawFromQuaternion( TRANSFORM_STAMPED_MAP_2_BASE.transform.rotation)   ) ;
+                vel_msg.linear.x = 0.0;
+                vel_msg.angular.z = 1.3 * angle_diff;
+
+                std::cout << "Estoy girando prro (indx " << index << "): "<< angle_diff << "\n"  << std::endl;
+                 if(  fabs(angle_diff) < .1 )
+                            index ++ ;
+            }
+            else if(  distance_to_path > 0.1 )
             {
-                
                 vel_msg.angular.z = 1.3 * normalize( atan2(path.poses[index].pose.position.y - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.y,
                                                 path.poses[index].pose.position.x - TRANSFORM_STAMPED_MAP_2_BASE.transform.translation.x) - getYawFromQuaternion( TRANSFORM_STAMPED_MAP_2_BASE.transform.rotation)   ) ;
                 
@@ -107,28 +122,25 @@ tf2_ros::TransformListener tfListener(tfBuffer);
                 std::cout << "Aun no llego a:\n" << path.poses[index].pose.position  << std::endl;
                 std::cout << "angular:\n" << vel_msg.angular.z  << std::endl;
                 std::cout << "Lineal:\n" << vel_msg.linear.x << std::endl;
-                
             }else
             {  
                 index++;
             }
-        }
-        else 
-        {
-            index = 0;
-            active = true;
+
+            if(path.poses.size() <= index)
+                run_type = -1;
+
+        break;
+
+        default:// waiting  path
             vel_msg.angular.z = 0.0;
             vel_msg.linear.x = 0.0;
-        }
-        
+        break;
+    }
 
-
-        turtle_vel.publish(vel_msg);
-        
-    }  
-    //std::cout << "Activ : " << active << std::endl;
+    std::cout << "Run type\n" << run_type << std::endl;
+    turtle_vel.publish(vel_msg);
    
-
     ros::spinOnce();
     rate.sleep();
   }

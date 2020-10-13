@@ -66,14 +66,10 @@ int main(int argc, char *argv[])
     int32_t publish_rate_ = 100;
     tf2_ros::TransformBroadcaster tf_br_;
 
-    tf_map_to_odom_.transform.translation.x =0;
-    tf_map_to_odom_.transform.translation.y =0;
+    tf_map_to_odom_.transform.translation.x = 0;
+    tf_map_to_odom_.transform.translation.y = 0;
     tf_map_to_odom_.transform.translation.z = 0;
     
-
-
-
-
 
     tf_map_to_odom_.transform.rotation.x = 0;
     tf_map_to_odom_.transform.rotation.y = 0;
@@ -88,19 +84,19 @@ int main(int argc, char *argv[])
 
     // set up publish rate
     ros::Rate loop_rate(publish_rate_);
-
+    std::cout << "Waiting for kalman pose..." << std::endl;
     while(localization_ekf_sub.getNumPublishers() == 0)
 	{
 		loop_rate.sleep();
         ros::spinOnce();
 	}
-
+    std::cout << "Waiting for Odom pose..." << std::endl;
     while(odom_sub.getNumPublishers() == 0)
 	{
 		loop_rate.sleep();
         ros::spinOnce();
 	}
-	
+	std::cout << "OK." << std::endl;
 
     double incremento = 0;
     // main loop

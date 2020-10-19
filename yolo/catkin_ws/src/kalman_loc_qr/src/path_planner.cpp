@@ -371,7 +371,7 @@ int main(int argc, char **argv){
 	
   ros::Rate rate(10);
 	while (n.ok())
-	{	
+	{	/*
 		try{
 			TRANSFORM_STAMPED_MAP_2_BASE = tfBuffer.lookupTransform( "map","base_link",
 									ros::Time(0));
@@ -384,7 +384,7 @@ int main(int argc, char **argv){
 			ROS_WARN("%s",ex.what());
 			ros::Duration(1.0).sleep();
 			continue;
-		}    
+		}    */
     ros::spinOnce();
 		rate.sleep();
 	}

@@ -222,7 +222,8 @@ bool ekf ()
 		if(debug)std::cout << "Fin prediccion x: \n" << x_ << "\n ------\n";
 		if(debug)std::cout << "Fin prediccion p: \n" << p << "\n ------\n";
 
-
+		Eigen::Vector3d ajuste;
+		ajuste << 0,0,0;
 
 		UPDATE_LANDMARKS_FLAG = false;
 		int id_index;
@@ -232,6 +233,14 @@ bool ekf ()
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
 			
+			if(debug)std::cout << " landmarks_detected[i].point.x " << landmarks_detected[i].point.x << std::endl;
+			if(debug)std::cout << " landmarks_detected[i].point.y " << landmarks_detected[i].point.y << std::endl;
+			if(debug)std::cout << "	ajuste : " << ajuste << std::endl;
+
+
+			landmarks_detected[i].point.x -= ajuste(0);
+			landmarks_detected[i].point.y -= ajuste(1);
+
 			if(debug)std::cout << "		Landmarks_detected[i].id : " << landmarks_detected[i].id << std::endl;
 			if(debug)std::cout << "		Landmarks_on_map[id_index].id : " << landmarks_on_map[id_index].id << std::endl;
 			if(debug)std::cout << "		Landmarks_on_map[id_index].point.x : " << landmarks_on_map[id_index].point.x << std::endl;
@@ -240,9 +249,14 @@ bool ekf ()
 			if(debug)std::cout << "		Distancia y esperada : " << landmarks_on_map[id_index].point.y - x_(1) << std::endl;
 			if(debug)std::cout << "		Landmarks_detected[i].point.x : " << landmarks_detected[i].point.x << std::endl;
 			if(debug)std::cout << "		Landmarks_detected[i].point.y : " << landmarks_detected[i].point.y << std::endl;
-			if(debug)std::cout << "		Error en x : " << landmarks_detected[i].point.x - landmarks_on_map[id_index].point.x - x_(0)<< std::endl;
-			if(debug)std::cout << "		Error en y : " << landmarks_detected[i].point.y - landmarks_on_map[id_index].point.y - x_(1)<< std::endl;
+			if(debug)std::cout << "		Error en x : " << landmarks_detected[i].point.x - fabs(landmarks_on_map[id_index].point.x - x_(0) )<< std::endl;
+			if(debug)std::cout << "		Error en y : " << landmarks_detected[i].point.y - fabs(landmarks_on_map[id_index].point.y - x_(1) )<< std::endl;
 			
+			if( fabs(fabs(landmarks_detected[i].point.x) - fabs(landmarks_on_map[id_index].point.x - x_(0) ) )  > 2.0 ||
+			fabs(fabs(landmarks_detected[i].point.y) - fabs(landmarks_on_map[id_index].point.y - x_(1) )) > 2.0)
+				break;
+
+
 			// The real measurement
 			z_i_t << sqrt( pow(landmarks_detected[i].point.x,2) + pow(landmarks_detected[i].point.y,2) ) , atan2(landmarks_detected[i].point.y,landmarks_detected[i].point.x) ,0; 
 			
@@ -290,6 +304,9 @@ bool ekf ()
 			
 			if(debug)std::cout << "		V: \n"<< v << "\n ------\n";
 			
+			
+			Eigen::Vector3d ajuste_y;
+			ajuste =  (k*v);
 			x_ = x_ + (k*v); // Actualizacion vector de estado
 			
 			if(debug)std::cout << "		X: \n" << x_ << "\n ------\n";
@@ -298,6 +315,7 @@ bool ekf ()
 			
 			if(debug)std::cout << "		P: \n" << p << "\n ------\n";
 
+			//break;
 		}
 		UPDATE_LANDMARKS_FLAG = true;
 	

@@ -30,7 +30,7 @@
 	</node>
      <!-- Une el kinect a la base -->
    
-    <node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/diego/kk/Tesis/yolo/catkin_ws/dataset/corta.bag"/>
+    <node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/diego/kk/Tesis/yolo/catkin_ws/dataset/larga.bag"/>
 
 
 

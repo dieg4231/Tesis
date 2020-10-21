@@ -6,7 +6,7 @@ initial_a: 0
 
 
 # Path to  landmarks map file
-path_land_map: /home/diego/kk/Tesis/yolo/catkin_ws/src/kalman_loc_qr/data/nuevobueno.txt
+path_land_map: /home/diego/kk/Tesis/yolo/catkin_ws/src/kalman_loc_qr/data/completo.txt
 
 # Distance (in meters) to run EKF algorithm 
 dist_update: 0.03

@@ -15,9 +15,9 @@
 
     
 
-    <node name="ekf" pkg="kalman_loc_qr" type="ekf" output="screen">
+    <!--node name="ekf" pkg="kalman_loc_qr" type="ekf" output="screen">
         <rosparam command="load" file="$(find kalman_loc_qr)/params/ekf_config_k.yaml" />			
-	</node>
+	</node-->
 
     <node name="tf_map_odom" pkg="kalman_loc_qr" type="tf_map_odom" output="screen" >
     </node>
@@ -29,7 +29,14 @@
     <node name="uncertanty_blob" pkg="kalman_loc_qr" type="uncertanty_blob" output="screen">			
 	</node>
      <!-- Une el kinect a la base -->
-   
+    <node pkg="tf" type="tf_remap" name="tf_remapper" output="screen">
+  <rosparam param="mappings">
+    [{old: /hokuyo_laser_link, new: /feo}]
+  </rosparam>
+</node>
+
+<node pkg="tf" type="static_transform_publisher" name="base_to_kinectds" args="-0.30 0.0 0.2 0 0 0 base_link /hokuyo_laser_link   50"/>
+
     <node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/diego/kk/Tesis/yolo/catkin_ws/dataset/corta.bag"/>
 
 

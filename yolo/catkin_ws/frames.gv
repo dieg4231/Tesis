@@ -1,12 +1,20 @@
 digraph G {
-"base_link" -> "hokuyo_laser_link"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 \nBuffer length: 0.000 sec\n"];
-"odom" -> "base_link"[label="Broadcaster: /play_1602554848606020418\nAverage rate: 20.270 Hz\nMost recent transform: 1601527508.639 \nBuffer length: 4.933 sec\n"];
-"base_link" -> "kinect_link"[label="Broadcaster: /base_to_kinect\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 \nBuffer length: 0.000 sec\n"];
-"base_link" -> "platform_link"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 \nBuffer length: 0.000 sec\n"];
-"camera_link" -> "camera_rgb_frame"[label="Broadcaster: /play_1602554848606020418\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 \nBuffer length: 0.000 sec\n"];
-"kinect_link" -> "camera_link"[label="Broadcaster: /play_1602554848606020418\nAverage rate: 20.144 Hz\nMost recent transform: 1601527508.668 \nBuffer length: 4.915 sec\n"];
-"map" -> "odom"[label="Broadcaster: /tf_map_odom\nAverage rate: 100.201 Hz\nMost recent transform: 1602554870.721 \nBuffer length: 4.980 sec\n"];
-"base_link" -> "wheel0_link"[label="Broadcaster: /play_1602554848606020418\nAverage rate: 30.203 Hz\nMost recent transform: 1601527508.627 \nBuffer length: 4.933 sec\n"];
-"base_link" -> "wheel1_link"[label="Broadcaster: /play_1602554848606020418\nAverage rate: 30.203 Hz\nMost recent transform: 1601527508.627 \nBuffer length: 4.933 sec\n"];
-"base_link" -> "wheel2_link"[label="Broadcaster: /play_1602554848606020418\nAverage rate: 30.203 Hz\nMost recent transform: 1601527508.627 \nBuffer length: 4.933 sec\n"];
+"base_link" -> "hokuyo_laser_link"[label="Broadcaster: /base_to_kinectds\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1601528547.352 sec old)\nBuffer length: 0.000 sec\n"];
+"odom" -> "base_link"[label="Broadcaster: /player\nAverage rate: 20.204 Hz\nMost recent transform: 1601528547.309 ( 0.042 sec old)\nBuffer length: 4.900 sec\n"];
+"base_link" -> "kinect_link"[label="Broadcaster: /base_to_kinect\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1601528547.352 sec old)\nBuffer length: 0.000 sec\n"];
+"base_link" -> "platform_link"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1601528547.352 sec old)\nBuffer length: 0.000 sec\n"];
+"camera_rgb_frame" -> "camera_rgb_optical_frame"[label="Broadcaster: /player\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1601528547.352 sec old)\nBuffer length: 0.000 sec\n"];
+"kinect_link" -> "camera_link"[label="Broadcaster: /player\nAverage rate: 20.132 Hz\nMost recent transform: 1601528547.389 ( -0.038 sec old)\nBuffer length: 4.967 sec\n"];
+"map" -> "odom"[label="Broadcaster: /tf_map_odom\nAverage rate: 100.356 Hz\nMost recent transform: 1601528547.352 ( 0.000 sec old)\nBuffer length: 4.972 sec\n"];
+"base_link" -> "wheel0_link"[label="Broadcaster: /player\nAverage rate: 30.405 Hz\nMost recent transform: 1601528547.319 ( 0.032 sec old)\nBuffer length: 4.933 sec\n"];
+"base_link" -> "wheel1_link"[label="Broadcaster: /player\nAverage rate: 30.405 Hz\nMost recent transform: 1601528547.319 ( 0.032 sec old)\nBuffer length: 4.933 sec\n"];
+"base_link" -> "wheel2_link"[label="Broadcaster: /player\nAverage rate: 30.405 Hz\nMost recent transform: 1601528547.319 ( 0.032 sec old)\nBuffer length: 4.933 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1601528547.352"[ shape=plaintext ] ;
+ }->"camera_rgb_frame";
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1601528547.352"[ shape=plaintext ] ;
+ }->"map";
 }

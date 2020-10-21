@@ -10,6 +10,7 @@
 #include <tf/transform_listener.h>
 
 ros::Publisher blob_pub;
+ros::Publisher new_loc_pub;
 
 void localizationEkfCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& data)
 {
@@ -41,6 +42,29 @@ void localizationEkfCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& 
 		printf("\n");
 		std::cout << es.eigenvectors() << "\n";
 	}
+
+
+	visualization_msgs::Marker arrow;
+    arrow.header.frame_id = "map";
+    arrow.header.stamp = ros::Time();
+    arrow.ns = "my_namespace2";
+    arrow.id = 0;
+    arrow.type = visualization_msgs::Marker::ARROW;
+    arrow.action = visualization_msgs::Marker::ADD;
+    arrow.lifetime = ros::Duration(5);
+    arrow.pose.position.x = data->pose.position.x;
+    arrow.pose.position.y = data->pose.position.y;
+    arrow.pose.position.z = 0.0;
+    
+    arrow.color.a = 0.5; // Don't forget to set the alpha!
+    arrow.color.r = 0.0;
+    arrow.color.g = 0.0;
+    arrow.color.b = 0.9;
+
+	arrow.pose.orientation = data->pose.orientation;;
+    arrow.scale.x = .5;
+    arrow.scale.y = .1;
+    arrow.scale.z = .5;
 
     visualization_msgs::Marker blob;
     blob.header.frame_id = "map";
@@ -76,6 +100,8 @@ void localizationEkfCallback(const geometry_msgs::PoseWithCovariance::ConstPtr& 
 	}
 
     blob_pub.publish(blob);
+
+	new_loc_pub.publish(arrow);
 	
 }
 
@@ -86,6 +112,7 @@ int main(int argc, char *argv[])
 
 	ros::Subscriber localization_ekf_sub = nh.subscribe("localization_ekf", 0, localizationEkfCallback);
     blob_pub = nh.advertise<visualization_msgs::Marker>( "uncertanty_blob", 0 );
+	new_loc_pub = nh.advertise<visualization_msgs::Marker>( "new_loc", 0 );
 	ros::Rate loop_rate(50);
 	
 	while (ros::ok())

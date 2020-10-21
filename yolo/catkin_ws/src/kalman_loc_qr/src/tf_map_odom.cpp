@@ -37,19 +37,29 @@ void LocalizationEkfCallback(const geometry_msgs::PoseWithCovariance& msg)
 {
     LOCALIZATION_POSE = msg;
 
-    tf_map_to_odom_.transform.translation.x =  LOCALIZATION_POSE.pose.position.x - ROBOT_ODOM.pose.pose.position.x;
-    tf_map_to_odom_.transform.translation.y = LOCALIZATION_POSE.pose.position.y - ROBOT_ODOM.pose.pose.position.y;
-    tf_map_to_odom_.transform.translation.z = 0;
+
    
 
     //std::cout << getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation  )<< "\n";
+    std::cout << "XXXXXXXX"<< normalize( normalize(0.7) - normalize(-0.7) ) << "\n";
+    std::cout << "XXXXXXXX First "<< getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) << "\n";
+    std::cout << "XXXXXXXX Second "<< getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation )<< "\n";
+    std::cout << "XXXXXXXX Res "<< getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) - getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation )  << "\n";
     tf2::Quaternion q;
-    q.setRPY(0, 0, normalize( getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation ) - getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation ) ) );
+    q.setRPY(0, 0, normalize( normalize(getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation )) - normalize(getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation )) ) );
     q.normalize();
     tf_map_to_odom_.transform.rotation.x = q.x();
     tf_map_to_odom_.transform.rotation.y = q.y();
     tf_map_to_odom_.transform.rotation.z = q.z();
     tf_map_to_odom_.transform.rotation.w = q.w();
+
+
+    double theta = normalize( normalize(getYawFromQuaternion( LOCALIZATION_POSE.pose.orientation )) - normalize(getYawFromQuaternion( ROBOT_ODOM.pose.pose.orientation )) ) ;
+
+    tf_map_to_odom_.transform.translation.x =  LOCALIZATION_POSE.pose.position.x - ROBOT_ODOM.pose.pose.position.x*cos(theta) + ROBOT_ODOM.pose.pose.position.y*sin(theta);
+    tf_map_to_odom_.transform.translation.y =  LOCALIZATION_POSE.pose.position.y - ROBOT_ODOM.pose.pose.position.x*sin(theta) - ROBOT_ODOM.pose.pose.position.y*cos(theta);
+    tf_map_to_odom_.transform.translation.z = 0;
+
 }
 
 

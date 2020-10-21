@@ -198,7 +198,7 @@ bool ekf ()
 
 	 // Prediction step
 	
-		if(debug)std::cout << "Inicio prediccion: \n" << x_ << "\n ------\n";
+		if(debug)std::cout << "Inicio prediccion::::::::::::::::::::::::::::::::::::::::::::: \n" << x_ << "\n ------\n";
 	    
 
 		sample_motion_model_odometry(x_, &translation, &theta_plus_rotation1 );
@@ -225,10 +225,17 @@ bool ekf ()
 		Eigen::Vector3d ajuste;
 		ajuste << 0,0,0;
 
+		Eigen::Vector3d media;
+		media << 0,0,0;
+
+		int n_land=0;
+
 		UPDATE_LANDMARKS_FLAG = false;
 		int id_index;
-		for(int i = 0; i < landmarks_detected.size(); ++i)
-		{	
+		
+		for( int i = 0; i < landmarks_detected.size(); ++i)
+		{	//p = p/2.0;
+			
 			for(id_index = 0; id_index < landmarks_on_map.size(); id_index++)
 				if( landmarks_detected[i].id == landmarks_on_map[id_index].id )
 					break;
@@ -237,9 +244,16 @@ bool ekf ()
 			if(debug)std::cout << " landmarks_detected[i].point.y " << landmarks_detected[i].point.y << std::endl;
 			if(debug)std::cout << "	ajuste : " << ajuste << std::endl;
 
-
-			landmarks_detected[i].point.x -= ajuste(0);
-			landmarks_detected[i].point.y -= ajuste(1);
+/*
+			landmarks_detected[i].point.x += ajuste(0);
+			landmarks_detected[i].point.y += ajuste(1);
+				
+			double aux_angle_x =  landmarks_detected[i].point.x*cos(ajuste(2)) + landmarks_detected[i].point.y*sin(ajuste(2));
+			double aux_angle_y = -landmarks_detected[i].point.x*sin(ajuste(2)) + landmarks_detected[i].point.y*cos(ajuste(2));
+			landmarks_detected[i].point.x =  aux_angle_x;
+			landmarks_detected[i].point.y = aux_angle_y;
+			*/
+			
 
 			if(debug)std::cout << "		Landmarks_detected[i].id : " << landmarks_detected[i].id << std::endl;
 			if(debug)std::cout << "		Landmarks_on_map[id_index].id : " << landmarks_on_map[id_index].id << std::endl;
@@ -252,9 +266,9 @@ bool ekf ()
 			if(debug)std::cout << "		Error en x : " << landmarks_detected[i].point.x - fabs(landmarks_on_map[id_index].point.x - x_(0) )<< std::endl;
 			if(debug)std::cout << "		Error en y : " << landmarks_detected[i].point.y - fabs(landmarks_on_map[id_index].point.y - x_(1) )<< std::endl;
 			
-			if( fabs(fabs(landmarks_detected[i].point.x) - fabs(landmarks_on_map[id_index].point.x - x_(0) ) )  > 2.0 ||
-			fabs(fabs(landmarks_detected[i].point.y) - fabs(landmarks_on_map[id_index].point.y - x_(1) )) > 2.0)
-				break;
+			//if( fabs(fabs(landmarks_detected[i].point.x) - fabs(landmarks_on_map[id_index].point.x - x_(0) ) )  > 0.6 ||
+			//fabs(fabs(landmarks_detected[i].point.y) - fabs(landmarks_on_map[id_index].point.y - x_(1) )) > .6)
+			//	break;
 
 
 			// The real measurement
@@ -270,18 +284,26 @@ bool ekf ()
 			angle_z_i_t_hat  = atan2(landmarks_on_map[id_index].point.y - x_(1), landmarks_on_map[id_index].point.x - x_(0)) - x_(2);
 			
 			// Validacion para que el angulo obtenido siempre este entre pi y -pi
-			if (angle_z_i_t_hat > M_PI)
+			/*if (angle_z_i_t_hat > M_PI)
 				angle_z_i_t_hat -= 2*M_PI;
 			if (angle_z_i_t_hat < -M_PI)
 				angle_z_i_t_hat += 2*M_PI;
-
+*/
+			angle_z_i_t_hat = normalize(angle_z_i_t_hat);			
 			// Vector de lecturas esperadas
 			z_i_t_hat  << sqrt(dist), angle_z_i_t_hat, 0 ;
 
 			if(debug)std::cout << "		z_i_t_hat (Esperadas): \n" << z_i_t_hat << "\n ------" << std::endl;
 
-			if(debug)std::cout << "		Error z_i_t_hat (Esperadas) - z_i_t(measurmet): \n" << z_i_t_hat  -  z_i_t << "\n ------" << std::endl;
+			if(debug)std::cout << "		Error z_i_t_hat (Esperadas) - z_i_t(measurmet): \n" << z_i_t  - z_i_t_hat  << "\n ------" << std::endl;
 			
+			if( (fabs(z_i_t(0)  - z_i_t_hat(0)) > 1.0) || (fabs(z_i_t(1)  - z_i_t_hat(1)) > 1.0) )
+			{
+				if(debug)std::cout << "		SALTOOOOOO ....................." << std::endl;
+				break;
+			}
+				
+
 			// fin calculo de lecturas esperadas
 			
 			// El jacobiano de la funcion h() con respecto al robot	
@@ -292,7 +314,10 @@ bool ekf ()
 			if(debug)std::cout << "		H: \n" << H << "\n ------\n";
 			if(debug)std::cout << "		r: \n" << r << "\n ------\n";
 			
-			s = ( H * p * H.transpose() ) + r; // S xD
+
+
+
+			s = ( H * p * H.transpose() ) +  ((landmarks_detected.size()==1)? r/100 :r); // S xD
 			
 			if(debug)std::cout << "		S: \n" << s << "\n ------\n";
 
@@ -306,9 +331,34 @@ bool ekf ()
 			
 			
 			Eigen::Vector3d ajuste_y;
-			ajuste =  (k*v);
+			ajuste =  1*(k*v);
+
+			if( (fabs(ajuste(0)) > 1.0) || (fabs(ajuste(1)) > 1.0)   )
+			{
+				if(debug)std::cout << "		SALTOOOOOO ....................." << std::endl;
+				break;
+			}
+
+			//if(debug)std::cout << "	ajuste : " << ajuste << std::endl;
+			if(0)
+			for( int j = i; j < landmarks_detected.size(); ++j)
+			{	
+				if(debug)std::cout << "Antes x: \n"<< landmarks_detected[j].point.x << "\n";
+				if(debug)std::cout << "Antes y: \n"<< landmarks_detected[j].point.y << "\n ------\n";
+				landmarks_detected[j].point.x += ajuste(0);
+				landmarks_detected[j].point.y += ajuste(1);
+				
+				double aux_angle_x =  landmarks_detected[j].point.x*cos(ajuste(2)) + landmarks_detected[j].point.y*sin(ajuste(2));
+				double aux_angle_y = -landmarks_detected[j].point.x*sin(ajuste(2)) + landmarks_detected[j].point.y*cos(ajuste(2));
+				landmarks_detected[j].point.x =  aux_angle_x;
+				landmarks_detected[j].point.y = aux_angle_y;
+				if(debug)std::cout << "Despues x: \n"<< landmarks_detected[j].point.x << "\n";
+				if(debug)std::cout << "Despues y: \n"<< landmarks_detected[j].point.y << "\n ------\n";
+			}
 			x_ = x_ + (k*v); // Actualizacion vector de estado
 			
+			media += x_ ;
+			n_land++;
 			if(debug)std::cout << "		X: \n" << x_ << "\n ------\n";
 			
 			p = ( I - k * H ) * p; // Actualizacion matriz de covarianza
@@ -316,7 +366,13 @@ bool ekf ()
 			if(debug)std::cout << "		P: \n" << p << "\n ------\n";
 
 			//break;
+			
+			
 		}
+		if(n_land>1)
+		x_ = media/n_land;
+		//p << 0.07,0.07,0,0.07,0,0.07,0,0,0.07;
+
 		UPDATE_LANDMARKS_FLAG = true;
 	
 		// Validacion para que el angulo obtenido siempre este entre pi y -pi
@@ -345,9 +401,9 @@ bool ekf ()
 
 		pose_pub.publish(localizatio_pose);
 		
-		if(debug)std::cout << "actualizacion Final x: \n" << x_ << "\n ------\n";
-		if(debug)std::cout << "actualizacion Final p: \n" << p << "\n ------\n";
-		if(debug)std::cout << "Final -----\n";
+		//if(debug)std::cout << "actualizacion Final x: \n" << x_ << "\n ------\n";
+		//if(debug)std::cout << "actualizacion Final p: \n" << p << "\n ------\n";
+		//f(debug)std::cout << "Final -----\n";
 
 		return true;
 	

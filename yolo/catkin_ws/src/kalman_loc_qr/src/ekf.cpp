@@ -333,7 +333,7 @@ bool ekf ()
 			Eigen::Vector3d ajuste_y;
 			ajuste =  1*(k*v);
 
-			if( (fabs(ajuste(0)) > 1.0) || (fabs(ajuste(1)) > 1.0)   )
+			if( (fabs(ajuste(0)) > 0.5) || (fabs(ajuste(1)) > 0.5)   )
 			{
 				if(debug)std::cout << "		SALTOOOOOO ....................." << std::endl;
 				break;

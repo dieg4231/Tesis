@@ -244,3 +244,6 @@ target_link_libraries(uncertanty_blob ${catkin_LIBRARIES})
 
 add_executable(exec_path src/exec_path.cpp)
 target_link_libraries(exec_path ${catkin_LIBRARIES})
+
+add_executable(error_calculator src/error_calculator.cpp)
+target_link_libraries(error_calculator ${catkin_LIBRARIES})
